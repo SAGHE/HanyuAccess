@@ -1,0 +1,1212 @@
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { 
+  BookOpen, BarChart2, CheckCircle, XCircle, 
+  SkipForward, Home, RefreshCw, ChevronRight, ChevronLeft,
+  Settings, Play, X, Edit3, Eye, EyeOff, HelpCircle, Eraser, Search, Square, Volume2, Volume1,
+  TrendingUp, AlertTriangle, Zap, BrainCircuit, History, Users, UserPlus, Trash2, Edit2, ChevronDown,
+  MessageCircle, Send
+} from 'lucide-react';
+
+// ============================================================================
+// DATOS MAESTROS (Tabla 1: RAW_DATA)
+// ============================================================================
+const RAW_DATA = [
+  { id: 1, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Saludos", subtema: "Básico", char: "你好", tildes: "nǐ hǎo", num: "ni3 hao3", esp: "Hola" },
+  { id: 2, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Saludos", subtema: "Plural", char: "你们好", tildes: "nǐmen hǎo", num: "ni3 men0 hao3", esp: "Hola a todos" },
+  { id: 3, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Saludos", subtema: "Formal", char: "您好", tildes: "nín hǎo", num: "nin2 hao3", esp: "Hola [formal, a un superior/mayor]" },
+  { id: 4, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación", subtema: "Pregunta", char: "你忙吗?", tildes: "nǐ máng ma?", num: "ni3 mang2 ma0", esp: "¿Estás ocupado?" },
+  { id: 5, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación", subtema: "Respuesta", char: "很忙", tildes: "hěn máng", num: "hen3 mang2", esp: "Estoy muy ocupado / Muy ocupado" },
+  { id: 6, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Personas", subtema: "Profesión", char: "老师", tildes: "lǎoshī", num: "lao3 shi1", esp: "Profesor (profesora)" },
+  { id: 7, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Preguntas", subtema: "Identidad", char: "这是谁?", tildes: "zhè shì shéi?", num: "zhe4 shi4 shei2", esp: "¿Quién es este?" },
+  { id: 8, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Preguntas", subtema: "Identidad", char: "那是谁?", tildes: "nà shì shéi?", num: "na4 shi4 shei2", esp: "¿Quién es ese (aquel)?" },
+  { id: 9, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Cortesía", subtema: "Pregunta; Cortesía", char: "可以进来吗?", tildes: "kěyǐ jìnlái ma?", num: "ke3 yi3 jin4 lai2 ma0", esp: "¿Puedo pasar?" },
+  { id: 10, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Cortesía", subtema: "Invitación", char: "请进", tildes: "qǐng jìn", num: "qing3 jin4", esp: "Pasa / Pase, por favor" },
+  { id: 11, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Cortesía", subtema: "Introducción a pregunta", char: "请问", tildes: "qǐngwèn", num: "qing3 wen4", esp: "Disculpe / Por favor [para introducir una pregunta]" },
+  { id: 12, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Cortesía", subtema: "Agradecimiento", char: "谢谢", tildes: "xièxie", num: "xie4 xie0", esp: "Gracias" },
+  { id: 13, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Cortesía", subtema: "Respuesta a agradecimiento", char: "不客气", tildes: "bú kèqi", num: "bu2 ke4 qi0", esp: "De nada" },
+  { id: 14, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Gramática", subtema: "Verbo", char: "在", tildes: "zài", num: "zai4", esp: "Estar [en un lugar]" },
+  { id: 15, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Gramática", subtema: "Negación", char: "不在", tildes: "bú zài", num: "bu2 zai4", esp: "No estar" },
+  { id: 16, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Despedidas", subtema: "Despedida", char: "再见", tildes: "zàijiàn", num: "zai4 jian4", esp: "Adiós" },
+  { id: 17, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Restaurante", subtema: "Ofrecimiento", char: "请喝茶", tildes: "qǐng hē chá", num: "qing3 he1 cha2", esp: "Toma té, por favor" },
+  { id: 18, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Restaurante", subtema: "Pregunta", char: "你喝咖啡吗?", tildes: "nǐ hē kāfēi ma?", num: "ni3 he1 ka1 fei1 ma0", esp: "¿Tomas café?" },
+  { id: 19, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Restaurante", subtema: "Respuesta", char: "我不喝咖啡", tildes: "wǒ bù hē kāfēi", num: "wo3 bu4 he1 ka1 fei1", esp: "No tomo café" },
+  { id: 20, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Restaurante", subtema: "Pregunta", char: "你喝什么?", tildes: "nǐ hē shénme?", num: "ni3 he1 shen2 me0", esp: "¿Qué bebes? / ¿Qué tomas?" },
+  { id: 21, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Restaurante", subtema: "Pedido", char: "来一杯茶", tildes: "lái yì bēi chá", num: "lai2 yi4 bei1 cha2", esp: "Un té, por favor" },
+  { id: 22, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Restaurante", subtema: "Llamada; Pedido", char: "服务员，点菜", tildes: "fúwùyuán, diǎn cài", num: "fu2 wu4 yuan2 dian3 cai4", esp: "Mesero (camarero), voy a elegir los platos" },
+  { id: 23, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Restaurante", subtema: "Pregunta; Formal", char: "您要什么?", tildes: "nín yào shénme?", num: "nin2 yao4 shen2 me0", esp: "¿Qué le gustaría? [formal]" },
+  { id: 24, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Restaurante", subtema: "Pedido", char: "我要烤鸭", tildes: "wǒ yào kǎoyā", num: "wo3 yao4 kao3 ya1", esp: "Quiero pato asado" },
+  { id: 25, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Comida", subtema: "Bebida", char: "可乐", tildes: "kělè", num: "ke3 le0", esp: "Cola [refresco de cola]" },
+  { id: 26, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Comida", subtema: "Dulce", char: "巧克力", tildes: "qiǎokèlì", num: "qiao3 ke4 li4", esp: "Chocolate" },
+  { id: 27, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Transporte", subtema: "Pregunta; Ubicación", char: "洗手间在哪儿?", tildes: "xǐshǒujiān zài nǎr?", num: "xi3 shou3 jian1 zai4 nar3", esp: "¿Dónde están los baños?" },
+  { id: 28, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Cortesía", subtema: "Disculpa; Informal", char: "不好意思", tildes: "bù hǎoyìsi", num: "bu4 hao3 yi4 si0", esp: "Lo siento / Disculpe [en situaciones informales]" },
+  { id: 29, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación", subtema: "Respuesta", char: "我不知道", tildes: "wǒ bù zhīdào", num: "wo3 bu4 zhi1 dao4", esp: "No lo sé" },
+  { id: 30, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación", subtema: "Respuesta", char: "没关系", tildes: "méi guānxi", num: "mei2 guan1 xi0", esp: "No pasa nada / No hay problema" },
+  { id: 31, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación", subtema: "Petición", char: "等一下", tildes: "děng yíxià", num: "deng3 yi2 xia4", esp: "Espera un momento" },
+  { id: 32, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Cortesía", subtema: "Disculpa; Formal", char: "对不起", tildes: "duìbuqǐ", num: "dui4 bu4 qi3", esp: "Lo siento / Perdón" },
+  { id: 33, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación", subtema: "Petición", char: "请再说一遍", tildes: "qǐng zài shuō yí biàn", num: "qing3 zai4 shuo1 yi2 bian4", esp: "Por favor, dilo otra vez" },
+  { id: 34, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Transporte", subtema: "Pregunta; Destino", char: "去哪儿?", tildes: "qù nǎr?", num: "qu4 nar3", esp: "¿A dónde vas / va?" },
+  { id: 35, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Lugares", subtema: "Destino", char: "去故宫", tildes: "qù Gùgōng", num: "qu4 gu4 gong1", esp: "A la Ciudad Prohibida" },
+  { id: 36, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Transporte", subtema: "Acción; Cortesía", char: "请上车", tildes: "qǐng shàng chē", num: "qing3 shang4 che1", esp: "Sube / Suba al coche, por favor" },
+  { id: 37, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Inicio", char: "上课了", tildes: "shàngkè le", num: "shang4 ke4 le0", esp: "Empieza la clase / Comienza la clase" },
+  { id: 38, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Fin", char: "下课", tildes: "xiàkè", num: "xia4 ke4", esp: "Termina la clase" },
+  { id: 39, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Saludo", char: "同学们好!", tildes: "tóngxuémen hǎo!", num: "tong2 xue2 men0 hao3", esp: "¡Hola, clase! / ¡Hola a todos! [dicho por el profesor]" },
+  { id: 40, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Instrucción", char: "你读", tildes: "nǐ dú", num: "ni3 du2", esp: "Lee" },
+  { id: 41, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Instrucción; Plural", char: "你们读", tildes: "nǐmen dú", num: "ni3 men0 du2", esp: "Leed [vosotros] / Lean [ustedes]" },
+  { id: 42, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Instrucción", char: "请大声读", tildes: "qǐng dà shēng dú", num: "qing3 da4 sheng1 du2", esp: "Por favor, lee en voz alta" },
+  { id: 43, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Instrucción", char: "跟我读", tildes: "gēn wǒ dú", num: "gen1 wo3 du2", esp: "Repite conmigo / Repite después de mí" },
+  { id: 44, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Instrucción", char: "听我念", tildes: "tīng wǒ niàn", num: "ting1 wo3 nian4", esp: "Escúchame leer" },
+  { id: 45, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Instrucción", char: "我说，你们听", tildes: "wǒ shuō, nǐmen tīng", num: "wo3 shuo1 ni3 men0 ting1", esp: "Yo hablo, vosotros escucháis" },
+  { id: 46, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Instrucción", char: "看黑板", tildes: "kàn hēibǎn", num: "kan4 hei1 ban3", esp: "Mirad / Miren la pizarra" },
+  { id: 47, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Instrucción", char: "把书打开", tildes: "bǎ shū dākāi", num: "ba3 shu1 da1 kai1", esp: "Abre el libro" },
+  { id: 48, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Instrucción", char: "请看书", tildes: "qǐng kàn shū", num: "qing3 kan4 shu1", esp: "Por favor, mirad / miren el libro" },
+  { id: 49, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Instrucción", char: "看课文", tildes: "kàn kèwén", num: "kan4 ke4 wen2", esp: "Leed / Lean el texto" },
+  { id: 50, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Instrucción", char: "请你念生词", tildes: "qǐng nǐ niàn shēngcí", num: "qing3 ni3 nian4 sheng1 ci2", esp: "Por favor, lee las palabras nuevas" },
+  { id: 51, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Instrucción", char: "请你写汉字", tildes: "qǐng nǐ xiě Hànzì", num: "qing3 ni3 xie3 han4 zi4", esp: "Por favor, escribe los caracteres chinos" },
+  { id: 52, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Pronunciación", subtema: "Atención", char: "注意发音", tildes: "zhùyì fāyīn", num: "zhu4 yi4 fa1 yin1", esp: "Presta atención a la pronunciación" },
+  { id: 53, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Pronunciación", subtema: "Atención; Tonos", char: "请注意声调", tildes: "qǐng zhùyì shēngdiào", num: "qing3 zhu4 yi4 sheng1 diao4", esp: "Por favor, presta atención a los tonos" },
+  { id: 54, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Tonos", subtema: "Nombre", char: "第一声", tildes: "dì yī shēng", num: "di4 yi1 sheng1", esp: "El primer tono" },
+  { id: 55, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Tonos", subtema: "Nombre", char: "第二声", tildes: "dì èr shēng", num: "di4 er4 sheng1", esp: "El segundo tono" },
+  { id: 56, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Tonos", subtema: "Nombre", char: "第三声", tildes: "dì sān shēng", num: "di4 san1 sheng1", esp: "El tercer tono" },
+  { id: 57, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Tonos", subtema: "Nombre", char: "第四声", tildes: "dì sì shēng", num: "di4 si4 sheng1", esp: "El cuarto tono" },
+  { id: 58, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Tonos", subtema: "Nombre", char: "轻声", tildes: "qīngshēng", num: "qing1 sheng1", esp: "El tono neutro" },
+  { id: 59, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Tonos", subtema: "Pregunta", char: "第几声？", tildes: "dì jǐ shēng?", num: "di4 ji3 sheng1", esp: "¿Qué tono es?" },
+  { id: 60, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Pregunta", char: "对不对？", tildes: "duì bu duì?", num: "dui4 bu4 dui4", esp: "¿Está bien? / ¿Es correcto?" },
+  { id: 61, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Confirmación", char: "对了", tildes: "duì le", num: "dui4 le0", esp: "Correcto / Bien" },
+  { id: 62, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Negación", char: "不对", tildes: "bú duì", num: "bu2 dui4", esp: "No es correcto / Está mal" },
+  { id: 63, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Pregunta", char: "懂了吗？", tildes: "dǒng le ma?", num: "dong3 le0 ma0", esp: "¿Lo entiendes?" },
+  { id: 64, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Afirmación", char: "懂了", tildes: "dǒng le", num: "dong3 le0", esp: "Sí, lo entiendo" },
+  { id: 65, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Negación", char: "不懂", tildes: "bù dǒng", num: "bu4 dong3", esp: "No, no lo entiendo" },
+  { id: 66, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Pregunta", char: "有问题吗?", tildes: "yǒu wèntí ma?", num: "you3 wen4 ti2 ma0", esp: "¿Tenéis / Tienen alguna pregunta?" },
+  { id: 67, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Afirmación", char: "我有问题", tildes: "wǒ yǒu wèntí", num: "wo3 you3 wen4 ti2", esp: "Tengo preguntas" },
+  { id: 68, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Clase", subtema: "Negación", char: "没有问题", tildes: "méiyǒu wèntí", num: "mei2 you3 wen4 ti2", esp: "No hay preguntas / No tengo preguntas" },
+  { id: 69, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Clase", subtema: "Elogio", char: "很好!", tildes: "hěn hǎo!", num: "hen3 hao3", esp: "¡Muy bien!" },
+  { id: 70, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Animales", subtema: "Animal", char: "小羊", tildes: "xiǎoyáng", num: "xiao3 yang2", esp: "Corderito" },
+  { id: 71, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Animales", subtema: "Animal", char: "小狗", tildes: "xiǎogǒu", num: "xiao3 gou3", esp: "Perrito (cachorro)" },
+  { id: 72, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Animales", subtema: "Animal", char: "小蜜蜂", tildes: "xiǎomìfēng", num: "xiao3 mi4 feng1", esp: "Abejita" },
+  { id: 73, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Animales", subtema: "Animal", char: "小奶牛", tildes: "xiǎoniúnǎi", num: "xiao3 niu2 nai3", esp: "Vaquita [vaca pequeña]" },
+  { id: 74, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Animales", subtema: "Animal", char: "小猫", tildes: "xiǎomāo", num: "xiao3 mao1", esp: "Gatito" },
+  { id: 75, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Animales", subtema: "Animal", char: "小鹿", tildes: "xiǎolù", num: "xiao3 lu4", esp: "Cervatillo" },
+  { id: 76, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Pronombres", subtema: "Personal", char: "我", tildes: "wǒ", num: "wo3", esp: "yo" },
+  { id: 77, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Pronombres", subtema: "Personal", char: "你", tildes: "nǐ", num: "ni3", esp: "tú" },
+  { id: 78, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Pronombres", subtema: "Personal", char: "他", tildes: "tā", num: "ta1", esp: "él" },
+  { id: 79, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Pronombres", subtema: "Personal", char: "她", tildes: "tā", num: "ta1", esp: "ella" },
+  { id: 80, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Básico", subtema: "Adjetivo", char: "好", tildes: "hǎo", num: "hao3", esp: "bueno; bien; vale" },
+  { id: 81, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Verbos", subtema: "Acción", char: "叫", tildes: "jiào", num: "jiao4", esp: "llamarse; llamar" },
+  { id: 82, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Cortesía", subtema: "Partícula", char: "请", tildes: "qǐng", num: "qing3", esp: "por favor; invitar" },
+  { id: 83, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Verbos", subtema: "Acción", char: "问", tildes: "wèn", num: "wen4", esp: "preguntar" },
+  { id: 84, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Cortesía", subtema: "Introducción a pregunta", char: "请问", tildes: "qǐngwèn", num: "qing3 wen4", esp: "Disculpe / Por favor [para introducir una pregunta]" },
+  { id: 85, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Preguntas", subtema: "Interrogativo", char: "什么", tildes: "shénme", num: "shen2 me0", esp: "qué" },
+  { id: 86, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Identidad", subtema: "Sustantivo", char: "名字", tildes: "míngzi", num: "ming2 zi0", esp: "nombre" },
+  { id: 87, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Identidad", subtema: "Sustantivo; Verbo", char: "姓", tildes: "xìng", num: "xing4", esp: "apellido; apellidarse" },
+  { id: 88, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Verbos", subtema: "Acción", char: "认识", tildes: "rènshi", num: "ren4 shi0", esp: "conocer [a alguien]" },
+  { id: 89, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Intensidad", subtema: "Adverbio", char: "很", tildes: "hěn", num: "hen3", esp: "muy" },
+  { id: 90, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Emociones", subtema: "Estado", char: "高兴", tildes: "gāoxìng", num: "gao1 xing4", esp: "contento (alegre)" },
+  { id: 91, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conectores", subtema: "Conjunción", char: "也", tildes: "yě", num: "ye3", esp: "también" },
+  { id: 92, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Gramática", subtema: "Verbo", char: "在", tildes: "zài", num: "zai4", esp: "Estar [en un lugar]" },
+  { id: 93, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Verbos", subtema: "Acción", char: "进", tildes: "jìn", num: "jin4", esp: "entrar" },
+  { id: 94, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Verbos", subtema: "Acción", char: "坐", tildes: "zuò", num: "zuo4", esp: "sentarse" },
+  { id: 95, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Tiempo", subtema: "Adverbio", char: "最近", tildes: "zuìjìn", num: "zui4 jin4", esp: "últimamente (recientemente)" },
+  { id: 96, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Preguntas", subtema: "Interrogativo", char: "怎么样", tildes: "zěnmeyàng", num: "zen3 me0 yang4", esp: "¿cómo está? / ¿qué tal?" },
+  { id: 97, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Estados", subtema: "Estado", char: "忙", tildes: "máng", num: "mang2", esp: "ocupado" },
+  { id: 98, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Gramática", subtema: "Negación", char: "不", tildes: "bù", num: "bu4", esp: "no" },
+  { id: 99, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Intensidad", subtema: "Adverbio", char: "太", tildes: "tài", num: "tai4", esp: "demasiado (extremadamente)" },
+  { id: 100, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Estados", subtema: "Estado", char: "困", tildes: "kùn", num: "kun4", esp: "tener sueño / soñoliento" },
+  { id: 101, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Estados", subtema: "Estado", char: "渴", tildes: "kě", num: "ke3", esp: "tener sed" },
+  { id: 102, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Estados", subtema: "Estado", char: "饿", tildes: "è", num: "e4", esp: "tener hambre" },
+  { id: 103, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Estados", subtema: "Estado", char: "累", tildes: "lèi", num: "lei4", esp: "cansado" },
+  { id: 104, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Evaluación", subtema: "Expresión", char: "还行", tildes: "hái xíng", num: "hai2 xing2", esp: "no está mal" },
+  { id: 105, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Evaluación", subtema: "Expresión", char: "马马虎虎", tildes: "mǎmǎhūhū", num: "ma3 ma3 hu1 hu1", esp: "más o menos (regular)" },
+  { id: 106, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Partículas", subtema: "Interrogativa", char: "吗", tildes: "ma", num: "ma0", esp: "[partícula interrogativa de sí/no]" },
+  { id: 107, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Partículas", subtema: "Modal", char: "呢", tildes: "ne", num: "ne0", esp: "[partícula para preguntas elípticas] (¿y...?)" },
+  { id: 108, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Nombres propios", subtema: "Persona", char: "马大为", tildes: "Mǎ Dàwéi", num: "ma3 da4 wei2", esp: "Ma Dawei (estudiante estadounidense)" },
+  { id: 109, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Nombres propios", subtema: "Persona", char: "宋华", tildes: "Sòng Huá", num: "song4 hua2", esp: "Song Hua (estudiante chino)" },
+  { id: 110, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Nombres propios", subtema: "Persona", char: "丁力波", tildes: "Dīng Lìbō", num: "ding1 li4 bo1", esp: "Ding Libo (estudiante canadiense)" },
+  { id: 111, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Nombres propios", subtema: "Persona", char: "林娜", tildes: "Lín Nà", num: "lin2 na4", esp: "Lin Na (estudiante británica)" },
+  { id: 112, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Tiempo", subtema: "Momento del día", char: "早上", tildes: "zǎoshang", num: "zao3 shang0", esp: "mañana [por la mañana]" },
+  { id: 113, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Tiempo", subtema: "Adverbio", char: "早", tildes: "zǎo", num: "zao3", esp: "temprano; buenos días" },
+  { id: 114, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Pronombres", subtema: "Personal; Plural", char: "你们", tildes: "nǐmen", num: "ni3 men0", esp: "vosotros / ustedes" },
+  { id: 115, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Gramática", subtema: "Sufijo", char: "们", tildes: "men", num: "men0", esp: "[sufijo para plural]" },
+  { id: 116, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Demostrativos", subtema: "Demostrativo", char: "这", tildes: "zhè", num: "zhe4", esp: "este (esta)" },
+  { id: 117, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Demostrativos", subtema: "Demostrativo", char: "那", tildes: "nà", num: "na4", esp: "aquel (aquella)" },
+  { id: 118, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Gramática", subtema: "Verbo", char: "是", tildes: "shì", num: "shi4", esp: "ser / estar [para identidad, origen]" },
+  { id: 119, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Relaciones", subtema: "Persona", char: "朋友", tildes: "péngyou", num: "peng2 you0", esp: "amigo (amiga)" },
+  { id: 120, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Escuela", subtema: "Persona", char: "同学", tildes: "tóngxué", num: "tong2 xue2", esp: "compañero de clase" },
+  { id: 121, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Tiempo", subtema: "Adverbio", char: "刚", tildes: "gāng", num: "gang1", esp: "recién (justo ahora)" },
+  { id: 122, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Verbos", subtema: "Acción", char: "到", tildes: "dào", num: "dao4", esp: "llegar; alcanzar" },
+  { id: 123, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Cortesía", subtema: "Pregunta; Formal", char: "贵姓", tildes: "guìxìng", num: "gui4 xing4", esp: "¿Su apellido? [forma muy cortés]" },
+  { id: 124, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Preguntas", subtema: "Interrogativo", char: "哪", tildes: "nǎ", num: "na3", esp: "¿cuál? / ¿qué? [para elegir]" },
+  { id: 125, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "Sustantivo", char: "国", tildes: "guó", num: "guo2", esp: "país" },
+  { id: 126, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Personas", subtema: "Sustantivo", char: "人", tildes: "rén", num: "ren2", esp: "persona" },
+  { id: 127, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Verbos", subtema: "Acción", char: "学习", tildes: "xuéxí", num: "xue2 xi2", esp: "estudiar (aprender)" },
+  { id: 128, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Verbos", subtema: "Acción", char: "学", tildes: "xué", num: "xue2", esp: "estudiar [usado con objeto]" },
+  { id: 129, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Idiomas", subtema: "Idioma", char: "汉语", tildes: "Hànyǔ", num: "han4 yu3", esp: "chino / mandarín [idioma]" },
+  { id: 130, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Familia", subtema: "Parentesco", char: "爸爸", tildes: "bàba", num: "ba4 ba0", esp: "papá" },
+  { id: 131, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Familia", subtema: "Parentesco", char: "妈妈", tildes: "māma", num: "ma1 ma0", esp: "mamá" },
+  { id: 132, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Preferencias", subtema: "Verbo", char: "喜欢", tildes: "xǐhuan", num: "xi3 huan0", esp: "gustar" },
+  { id: 133, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conectores", subtema: "Conjunción", char: "和", tildes: "hé", num: "he2", esp: "y (conjunción)" },
+  { id: 134, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Cantidad", subtema: "Cuantificador", char: "都", tildes: "dōu", num: "dou1", esp: "todos (ambos)" },
+  { id: 135, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Verbos", subtema: "Acción; Deseo", char: "要", tildes: "yào", num: "yao4", esp: "querer; pedir; ir a [futuro]" },
+  { id: 136, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Verbos", subtema: "Acción", char: "看", tildes: "kàn", num: "kan4", esp: "mirar [ver, leer]" },
+  { id: 137, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Verbos", subtema: "Acción", char: "吃", tildes: "chī", num: "chi1", esp: "comer" },
+  { id: 138, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Alimento", char: "点心", tildes: "diǎnxin", num: "dian3 xin0", esp: "aperitivos / dim sum [bocaditos]" },
+  { id: 139, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Alimento", char: "米饭", tildes: "mǐfàn", num: "mi3 fan4", esp: "arroz cocido" },
+  { id: 140, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Alimento", char: "饭", tildes: "fàn", num: "fan4", esp: "arroz; comida" },
+  { id: 141, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Alimento", char: "面条儿", tildes: "miàntiáor", num: "mian4 tiao2 r0", esp: "fideos" },
+  { id: 142, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Alimento", char: "饺子", tildes: "jiǎozi", num: "jiao3 zi0", esp: "empanadillas chinas (jiaozi)" },
+  { id: 143, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Alimento", char: "包子", tildes: "bāozi", num: "bao1 zi0", esp: "bollos rellenos al vapor (baozi)" },
+  { id: 144, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Alimento", char: "面包", tildes: "miànbāo", num: "mian4 bao1", esp: "pan" },
+  { id: 145, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Alimento", char: "汉堡包", tildes: "hànbǎobāo", num: "han4 bao3 bao1", esp: "hamburguesa" },
+  { id: 146, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Alimento", char: "比萨饼", tildes: "bǐsàbǐng", num: "bi3 sa4 bing3", esp: "pizza" },
+  { id: 147, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Comida", subtema: "Adjetivo", char: "好吃", tildes: "hǎochī", num: "hao3 chi1", esp: "delicioso [para comida]" },
+  { id: 148, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Tamaño", subtema: "Adjetivo", char: "大", tildes: "dà", num: "da4", esp: "grande" },
+  { id: 149, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Tamaño", subtema: "Adjetivo", char: "小", tildes: "xiǎo", num: "xiao3", esp: "pequeño" },
+  { id: 150, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Nombres propios", subtema: "Apellido", char: "陈", tildes: "Chén", num: "chen2", esp: "Chen (apellido chino)" },
+  { id: 151, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Nombres propios", subtema: "Persona", char: "王小云", tildes: "Wáng Xiǎoyún", num: "wang2 xiao3 yun2", esp: "Wang Xiaoyun (estudiante china)" },
+  { id: 152, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Ciudades", subtema: "Capital", char: "北京", tildes: "Běijīng", num: "bei3 jing1", esp: "Beijing (Pekín)" },
+  { id: 153, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Ciudades", subtema: "Ciudad", char: "上海", tildes: "Shànghǎi", num: "shang4 hai3", esp: "Shanghái" },
+  { id: 154, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "中国", tildes: "Zhōngguó", num: "zhong1 guo2", esp: "China" },
+  { id: 155, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "美国", tildes: "Měiguó", num: "mei3 guo2", esp: "Estados Unidos" },
+  { id: 156, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "西班牙", tildes: "Xībānyá", num: "xi1 ban1 ya2", esp: "España" },
+  { id: 157, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "法国", tildes: "Fǎguó", num: "fa3 guo2", esp: "Francia" },
+  { id: 158, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "德国", tildes: "Déguó", num: "de2 guo2", esp: "Alemania" },
+  { id: 159, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "加拿大", tildes: "Jiānádà", num: "jia1 na2 da4", esp: "Canadá" },
+  { id: 160, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "英国", tildes: "Yīngguó", num: "ying1 guo2", esp: "Reino Unido" },
+  { id: 161, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "澳大利亚", tildes: "Àodàlìyà", num: "ao4 da2 li4 ya4", esp: "Australia" },
+  { id: 162, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "俄罗斯", tildes: "Éluósī", num: "e2 luo2 si1", esp: "Rusia" },
+  { id: 163, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "日本", tildes: "Rìběn", num: "ri4 ben3", esp: "Japón" },
+  { id: 164, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "韩国", tildes: "Hánguó", num: "han2 guo2", esp: "Corea del Sur" },
+  { id: 165, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "泰国", tildes: "Tàiguó", num: "tai4 guo2", esp: "Tailandia" },
+  { id: 166, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "印度", tildes: "Yìndù", num: "yin4 du4", esp: "India" },
+  { id: 167, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Países", subtema: "País", char: "埃及", tildes: "Āijí", num: "ai1 ji2", esp: "Egipto" }
+];
+
+// ============================================================================
+// DATOS DE CONVERSACIÓN (Tabla 2: CONVERSATION_DATA)
+// ============================================================================
+const CONVERSATION_DATA = [
+  { id: 168, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 1.1", subtema: "A 1", char: "你好！", tildes: "Nǐ hǎo!", num: "ni3 hao3", esp: "¡Hola!" },
+  { id: 169, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 1.2", subtema: "B 1", char: "你好！", tildes: "Nǐ hǎo!", num: "ni3 hao3", esp: "¡Hola!" },
+  { id: 170, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 2.1", subtema: "A 1", char: "你们好！", tildes: "Nǐmen hǎo!", num: "ni3 men0 hao3", esp: "¡Hola a todos!" },
+  { id: 171, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 2.2", subtema: "B 1", char: "你好！", tildes: "Nǐ hǎo!", num: "ni3 hao3", esp: "¡Hola!" },
+  { id: 172, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 3.1", subtema: "A 1", char: "你忙吗？", tildes: "Nǐ máng ma?", num: "ni3 mang2 ma0", esp: "¿Estás ocupado?" },
+  { id: 173, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 3.2", subtema: "B 1", char: "很忙。", tildes: "Hěn máng.", num: "hen3 mang2", esp: "Muy ocupado." },
+  { id: 174, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 4.1", subtema: "A 1", char: "老师好！", tildes: "Lǎoshī hǎo!", num: "lao3 shi1 hao3", esp: "¡Hola profesora!" },
+  { id: 175, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 4.2", subtema: "B 1", char: "你们好！", tildes: "Nǐmen hǎo!", num: "ni3 men0 hao3", esp: "¡Hola a todos!" },
+  { id: 176, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 5.1", subtema: "A 1", char: "这是谁？", tildes: "Zhè shì shéi?", num: "zhe4 shi4 shei2", esp: "¿Quién es ella?" },
+  { id: 177, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 5.2", subtema: "B 1", char: "这是陈老师。", tildes: "Zhè shì Chén lǎoshī.", num: "zhe4 shi4 chen2 lao3shi1", esp: "Es la profesora Chen." },
+  { id: 178, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 6.1", subtema: "A 1", char: "那是谁？", tildes: "Nà shì shéi?", num: "na4 shi4 shei2", esp: "¿Quién es ese?" },
+  { id: 179, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 6.2", subtema: "B 1", char: "那是郑老师。", tildes: "Nà shì Zhèng lǎoshī.", num: "na4 shi4 zheng4 lao3shi1", esp: "Ese es el profesor Zheng." },
+  { id: 180, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 7.1", subtema: "A 1", char: "你喝咖啡吗？", tildes: "Nǐ hē kāfēi ma?", num: "ni3 he1 ka1fei1 ma0", esp: "¿Tomas café?" },
+  { id: 181, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 7.2", subtema: "B 1", char: "我不喝咖啡。", tildes: "Wǒ bù hē kāfēi.", num: "wo3 bu4 he1 ka1fei1", esp: "No tomo café." },
+  { id: 182, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 8.1", subtema: "A 1", char: "你喝什么？", tildes: "Nǐ hē shénme?", num: "ni3 he1 shen2 me0", esp: "¿Qué quieres beber?" },
+  { id: 183, section: "Introducción a la fonética 1 (Lección 1: Hola)", tema: "Conversación 8.2", subtema: "B 1", char: "来一杯茶。", tildes: "Lái yì bēi chá.", num: "lai2 yi4 bei1 cha2", esp: "Una taza de té." },
+  { id: 184, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 9.1", subtema: "A 1", char: "可以进来吗？", tildes: "Kěyǐ jìnlái ma?", num: "ke3 yi3 jin4 lai2 ma0", esp: "¿Puedo entrar?" },
+  { id: 185, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 9.2", subtema: "B 1", char: "请进。", tildes: "Qǐng jìn.", num: "qing3 jin4", esp: "Entra por favor." },
+  { id: 186, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 10.1", subtema: "A 1", char: "请喝茶。", tildes: "Qǐng hē chá.", num: "qing3 he1 cha2", esp: "Toma té, por favor." },
+  { id: 187, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 10.2", subtema: "B 1", char: "谢谢。", tildes: "Xièxie.", num: "xie4 xie0", esp: "Gracias." },
+  { id: 188, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 10.3", subtema: "A 2", char: "不客气。", tildes: "Bú kèqi.", num: "bu2 ke4 qi0", esp: "De nada." },
+  { id: 189, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 11.1", subtema: "A 1", char: "请问，陈老师在吗？", tildes: "Qǐngwèn, Chén lǎoshī zài ma?", num: "qing3 wen4, chen2 lao3shi1 zai4 ma0", esp: "Disculpe, ¿está aquí el profesor Chen?" },
+  { id: 190, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 11.2", subtema: "B 1", char: "在。", tildes: "Zài.", num: "zai4", esp: "Sí, está aquí." },
+  { id: 191, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 11.3", subtema: "B 2", char: "不在。", tildes: "Bú zài.", num: "bu2 zai4", esp: "No, no está aquí." },
+  { id: 192, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 12.1", subtema: "A 1", char: "再见！", tildes: "Zàijiàn!", num: "zai4 jian4", esp: "¡Adiós!" },
+  { id: 193, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 12.2", subtema: "B 1", char: "再见！", tildes: "Zàijiàn!", num: "zai4 jian4", esp: "¡Adiós!" },
+  { id: 194, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 13.1", subtema: "A 1", char: "请问，洗手间在哪儿？", tildes: "Qǐngwèn, xǐshǒujiān zài nǎr?", num: "qing3 wen4, xi3 shou3 jian1 zai4 nar3", esp: "Disculpe, ¿dónde está el baño?" },
+  { id: 195, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 13.2", subtema: "B 1", char: "不好意思，我不知道。", tildes: "Bù hǎoyìsi, wǒ bù zhīdào.", num: "bu4 hao3 yi4 si0, wo3 bu4 zhi1 dao4", esp: "Lo siento, no lo sé." },
+  { id: 196, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 13.3", subtema: "A 2", char: "没关系。", tildes: "Méi guānxi.", num: "mei2 guan1 xi0", esp: "No pasa nada." },
+  { id: 197, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 14.1", subtema: "A 1", char: "等一下。", tildes: "Děng yíxià.", num: "deng3 yi2 xia4", esp: "Espere un momento." },
+  { id: 198, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 14.2", subtema: "B 1", char: "对不起，请再说一遍。", tildes: "Duìbuqǐ, qǐng zài shuō yí biàn.", num: "dui4 bu0 qi3, qing3 zai4 shuo1 yi2 bian4", esp: "Disculpe, otra vez, por favor." },
+  { id: 199, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 14.3", subtema: "A 2", char: "等一下。", tildes: "Děng yíxià.", num: "deng3 yi2 xia4", esp: "Espere un momento." },
+  { id: 200, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 15.1", subtema: "A 1", char: "服务员，点菜。", tildes: "Fúwùyuán, diǎn cài.", num: "fu2 wu4 yuan2, dian3 cai4", esp: "Camarero, voy a pedir." },
+  { id: 201, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 15.2", subtema: "B 1", char: "您要什么？", tildes: "Nín yào shénme?", num: "nin2 yao4 shen2 me0", esp: "¿Qué le gustaría?" },
+  { id: 202, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 15.3", subtema: "A 2", char: "我要烤鸭。", tildes: "Wǒ yào kǎoyā.", num: "wo3 yao4 kao3 ya1", esp: "Quiero pato asado." },
+  { id: 203, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 16.1", subtema: "A 1", char: "您好，去哪儿？", tildes: "Nín hǎo, qù nǎr?", num: "nin2 hao3, qu4 nar3", esp: "Hola, ¿adónde va?" },
+  { id: 204, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 16.2", subtema: "B 1", char: "去故宫。", tildes: "Qù Gùgōng.", num: "qu4 gu4 gong1", esp: "A la Ciudad Prohibida." },
+  { id: 205, section: "Introducción a la fonética 2 (Lección 2: Gracias)", tema: "Conversación 16.3", subtema: "A 2", char: "请上车。", tildes: "Qǐng shàng chē.", num: "qing3 shang4 che1", esp: "Suba al coche, por favor." },
+  { id: 206, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 17.1", subtema: "Ma Dawei 1", char: "你好！", tildes: "Nǐ hǎo!", num: "ni3 hao3", esp: "¡Hola!" },
+  { id: 207, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 17.2", subtema: "Song Hua 1", char: "你好！", tildes: "Nǐ hǎo!", num: "ni3 hao3", esp: "¡Hola!" },
+  { id: 208, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 17.3", subtema: "Ma Dawei 2", char: "我叫马大为。请问，你叫什么名字？", tildes: "Wǒ jiào Mǎ Dàwéi. Qǐngwèn, nǐ jiào shénme míngzi?", num: "wo3 jiao4 ma3 da4 wei2. qing3 wen4, ni3 jiao4 shen2 me0 ming2 zi0", esp: "Me llamo Ma Dawei. Disculpe, ¿cómo te llamas?" },
+  { id: 209, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 17.4", subtema: "Song Hua 2", char: "我姓宋，叫宋华。", tildes: "Wǒ xìng Sòng, jiào Sòng Huá.", num: "wo3 xing4 song4, jiao4 song4 hua2", esp: "Mi apellido es Song, me llamo Song Hua." },
+  { id: 210, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 17.5", subtema: "Ma Dawei 3", char: "认识你很高兴。", tildes: "Rènshi nǐ hěn gāoxìng.", num: "ren4 shi0 ni3 hen3 gao1 xing4", esp: "Encantado de conocerte." },
+  { id: 211, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 17.6", subtema: "Song Hua 3", char: "认识你我也很高兴。", tildes: "Rènshi nǐ wǒ yě hěn gāoxìng.", num: "ren4 shi0 ni3 wo3 ye3 hen3 gao1 xing4", esp: "Encantado de conocerte también." },
+  { id: 212, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 18.1", subtema: "Ding Libo 1", char: "请问，林娜在吗？", tildes: "Qǐngwèn, Lín Nà zài ma?", num: "qing3 wen4, lin2 na4 zai4 ma0", esp: "Disculpe, ¿está Lin Na?" },
+  { id: 213, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 18.2", subtema: "Lin Na 1", char: "在。力波，请进，请坐。", tildes: "Zài. Lìbō, qǐng jìn, qǐng zuò.", num: "zai4. li4 bo1, qing3 jin4, qing3 zuo4", esp: "Sí. Libo, entra por favor, siéntate por favor." },
+  { id: 214, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 18.3", subtema: "Ding Libo 2", char: "谢谢。你最近怎么样？", tildes: "Xièxie. Nǐ zuìjìn zěnmeyàng?", num: "xie4 xie0. ni3 zui4 jin4 zen3 me0 yang4", esp: "Gracias. ¿Cómo has estado últimamente?" },
+  { id: 215, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 18.4", subtema: "Lin Na 2", char: "我很好。你呢？", tildes: "Wǒ hěn hǎo. Nǐ ne?", num: "wo3 hen3 hao3. ni3 ne0", esp: "Yo muy bien. ¿Y tú?" },
+  { id: 216, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 18.5", subtema: "Ding Libo 3", char: "我很忙。你忙吗？", tildes: "Wǒ hěn máng. Nǐ máng ma?", num: "wo3 hen3 mang2. ni3 mang2 ma0", esp: "Yo muy ocupado. ¿Estás ocupada?" },
+  { id: 217, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 18.6", subtema: "Lin Na 3", char: "我不太忙。大为好吗？", tildes: "Wǒ bú tài máng. Dàwéi hǎo ma?", num: "wo3 bu2 tai4 mang2. da4 wei2 hao3 ma0", esp: "Yo no estoy muy ocupada. ¿Está bien Dawei?" },
+  { id: 218, section: "Lección 1: ¿Cómo has estado? (你最近怎么样)", tema: "Conversación 18.7", subtema: "Ding Libo 4", char: "他也很好。", tildes: "Tā yě hěn hǎo.", num: "ta1 ye3 hen3 hao3", esp: "Él también está muy bien." },
+  { id: 219, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 19.1", subtema: "Ding Libo 1", char: "老师，早上好！", tildes: "Lǎoshī, zǎoshang hǎo!", num: "lao3 shi1, zao3 shang0 hao3", esp: "Profesora, ¡buenos días!" },
+  { id: 220, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 19.2", subtema: "Chen Laoshi 1", char: "你们好！", tildes: "Nǐmen hǎo!", num: "ni3 men0 hao3", esp: "¡Hola a todos!" },
+  { id: 221, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 19.3", subtema: "Ding Libo 2", char: "这是马大为，他是我的朋友，刚到北京。", tildes: "Zhè shì Mǎ Dàwéi, tā shì wǒ péngyou, gāng dào Běijīng.", num: "zhe4 shi4 ma3 da4 wei2, ta1 shi4 wo3 peng2 you0, gang1 dao4 bei3 jing1", esp: "Este es Ma Dawei, él es mi amigo, acaba de llegar a Beijing." },
+  { id: 222, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 19.4", subtema: "Ma Dawei 1", char: "您好！老师，您贵姓？", tildes: "Nín hǎo! Lǎoshī, nín guìxìng?", num: "nin2 hao3! lao3 shi1, nin2 gui4 xing4", esp: "¡Hola! Profesora, ¿cuál es su apellido?" },
+  { id: 223, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 19.5", subtema: "Chen Laoshi 2", char: "我姓陈。你是哪国人？", tildes: "Wǒ xìng Chén. Nǐ shì nǎ guó rén?", num: "wo3 xing4 chen2. ni3 shi4 na3 guo2 ren2", esp: "Mi apellido es Chen. ¿De qué país eres?" },
+  { id: 224, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 19.6", subtema: "Ma Dawei 2", char: "我是美国人。我也学习汉语。陈老师，认识您很高兴。", tildes: "Wǒ shì Měiguórén. Wǒ yě xuéxí Hànyǔ. Chén lǎoshī, rènshi nín hěn gāoxìng.", num: "wo3 shi4 mei3 guo2 ren2. wo3 ye3 xue2 xi2 han4 yu3. chen2 lao3 shi1, ren4 shi0 nin2 hen3 gao1 xing4", esp: "Soy estadounidense. Yo también estudio chino. Profesora Chen, encantado de conocerla." },
+  { id: 225, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 19.7", subtema: "Chen Laoshi 3", char: "认识你我也很高兴。", tildes: "Rènshi nǐ wǒ yě hěn gāoxìng.", num: "ren4 shi0 ni3 wo3 ye3 hen3 gao1 xing4", esp: "Encantada de conocerte también." },
+  { id: 226, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 19.8", subtema: "Ma Dawei 3", char: "老师，再见！", tildes: "Lǎoshī, zàijiàn!", num: "lao3 shi1, zai4 jian4", esp: "Profesora, ¡adiós!" },
+  { id: 227, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 19.9", subtema: "Chen Laoshi 4", char: "再见！", tildes: "Zàijiàn!", num: "zai4 jian4", esp: "¡Adiós!" },
+  { id: 228, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.1", subtema: "Ma Dawei 1", char: "小云，这是什么？", tildes: "Xiǎoyún, zhè shì shénme?", num: "xiao3 yun2, zhe4 shi4 shen2 me0", esp: "Xiaoyun, ¿qué es esto?" },
+  { id: 229, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.2", subtema: "Wang Xiaoyun 1", char: "这是点心。", tildes: "Zhè shì diǎnxin.", num: "zhe4 shi4 dian3 xin0", esp: "Esto son bocadillos." },
+  { id: 230, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.3", subtema: "Ma Dawei 2", char: "点心好吃吗？", tildes: "Diǎnxin hǎochī ma?", num: "dian3 xin0 hao3 chi1 ma0", esp: "¿Están deliciosos los bocadillos?" },
+  { id: 231, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.4", subtema: "Wang Xiaoyun 2", char: "好吃。我爸爸是上海人，他喜欢吃点心和米饭。", tildes: "Hǎochī. Wǒ bàba shì Shànghǎirén, tā xǐhuan chī diǎnxin hé mǐfàn.", num: "hao3 chi1. wo3 ba4 ba0 shi4 shang4 hai3 ren2, ta1 xi3 huan0 chi1 dian3 xin0 he2 mi3 fan4", esp: "Deliciosos. Mi papá es de Shanghai, a él le gusta comer bocadillos y arroz." },
+  { id: 232, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.5", subtema: "Ma Dawei 3", char: "北京人喜欢吃什么？", tildes: "Běijīngrén xǐhuan chī shénme?", num: "bei3 jing1 ren2 xi3 huan0 chi1 shen2 me0", esp: "¿A la gente de Beijing qué le gusta comer?" },
+  { id: 233, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.6", subtema: "Wang Xiaoyun 3", char: "我妈妈是北京人，她喜欢吃面条儿和饺子。", tildes: "Wǒ māma shì Běijīngrén, tā xǐhuan chī miàntiáor hé jiǎozi.", num: "wo3 ma1 ma0 shi4 bei3 jing1 ren2, ta1 xi3 huan0 chi1 mian4 tiao2 r he2 jiao3 zi0", esp: "Mi mamá es de Beijing, a ella le gusta comer tallarines y ravioles." },
+  { id: 234, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.7", subtema: "Ma Dawei 4", char: "这是饺子吗？", tildes: "Zhè shì jiǎozi ma?", num: "zhe4 shi4 jiao3 zi0 ma0", esp: "¿Estos son ravioles?" },
+  { id: 235, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.8", subtema: "Wang Xiaoyun 4", char: "这不是饺子，是包子。包子大，饺子小。你看，那是饺子。", tildes: "Zhè bú shì jiǎozi, shì bāozi. Bāozi dà, jiǎozi xiǎo. Nǐ kàn, nà shì jiǎozi.", num: "zhe4 bu2 shi4 jiao3 zi0, shi4 bao1 zi0. bao1 zi0 da4, jiao3 zi0 xiao3. ni3 kan4, na4 shi4 jiao3 zi0", esp: "Estos no son ravioles, son bollos. Los bollos son grandes, los ravioles son pequeños. Mira, aquellos son ravioles." },
+  { id: 236, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.9", subtema: "Ma Dawei 5", char: "包子好吃吗？", tildes: "Bāozi hǎochī ma?", num: "bao1 zi0 hao3 chi1 ma0", esp: "¿Están deliciosos los bollos?" },
+  { id: 237, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.10", subtema: "Wang Xiaoyun 5", char: "包子和饺子都很好吃。", tildes: "Bāozi hé jiǎozi dōu hěn hǎochī.", num: "bao1 zi0 he2 jiao3 zi0 dou1 hen3 hao3 chi1", esp: "Los bollos y los ravioles están todos muy deliciosos." },
+  { id: 238, section: "Lección 2: ¿De qué país eres? (你是哪国人)", tema: "Conversación 20.11", subtema: "Ma Dawei 6", char: "好，我要饺子，也要包子。", tildes: "Hǎo, wǒ yào jiǎozi, yě yào bāozi.", num: "hao3, wo3 yao4 jiao3 zi0, ye3 yao4 bao1 zi0", esp: "Bien, quiero ravioles, y también quiero bollos." }
+];
+
+// ============================================================================
+// REGLAS DE CONSUMO DE DATOS Y AGRUPACIÓN
+// ============================================================================
+const cleanPunctuation = (str) => str.replace(/[^\u4e00-\u9fa5]/g, '');
+const FLASH_DATA = [...RAW_DATA, ...CONVERSATION_DATA];
+const rawCharsSet = new Set(RAW_DATA.map(item => cleanPunctuation(item.char)));
+const deduplicatedConvData = CONVERSATION_DATA.filter(item => !rawCharsSet.has(cleanPunctuation(item.char)));
+const QUIZ_POOL_DATA = [...RAW_DATA, ...deduplicatedConvData];
+
+const CONVERSATIONS_MAP = {};
+CONVERSATION_DATA.forEach(item => {
+    const match = item.tema.match(/Conversaci[oó]n\s+(\d+)\.(\d+)/i);
+    if (match) {
+        const convId = match[1];
+        if (!CONVERSATIONS_MAP[convId]) CONVERSATIONS_MAP[convId] = [];
+        CONVERSATIONS_MAP[convId].push(item);
+    }
+});
+
+const UNIQUE_LESSONS = [...new Set(RAW_DATA.map(item => item.section))];
+
+// ============================================================================
+// UTILS GLOBALES
+// ============================================================================
+const normalizeText = (str) => {
+  if (!str) return "";
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[.,\/#!$%\^&\*;:{}=\-_`~()¡!¿?]/g, "").trim().replace(/\s+/g, ' ');
+};
+
+const parseEspAnswers = (rawEsp) => {
+  let text = rawEsp.replace(/\[.*?\]/g, '').trim();
+  let alternatives = text.split('/').map(s => s.trim());
+  const expandParentheses = (str) => {
+      const match = /([\wáéíóúüñÁÉÍÓÚÜÑ]+)\s*\(([\wáéíóúüñÁÉÍÓÚÜÑ\s]+)\)/.exec(str);
+      if (!match) return [str];
+      const word = match[1]; const synonym = match[2];
+      const before = str.substring(0, match.index); const after = str.substring(match.index + match[0].length);
+      const opt1 = before + word + after; const opt2 = before + synonym + after;
+      return [...expandParentheses(opt1), ...expandParentheses(opt2)];
+  };
+  let allValidOptions = [];
+  alternatives.forEach(alt => { allValidOptions.push(...expandParentheses(alt)); });
+  return allValidOptions.map(s => s.replace(/\s+/g, ' ').trim());
+};
+
+const checkEspAnswer = (input, targetRawEsp) => {
+  const validOptions = parseEspAnswers(targetRawEsp);
+  const normalizedInput = normalizeText(input);
+  return validOptions.some(opt => normalizeText(opt) === normalizedInput);
+};
+
+const comparePinyin = (input, target) => {
+  const clean = (s) => s.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()¡!¿?]/g, "").split(/\s+/);
+  const inputParts = clean(input); const targetParts = clean(target);
+  if (inputParts.length !== targetParts.length) return inputParts.join('') === targetParts.join('');
+  const getToneBase = (syllable) => {
+      const match = syllable.match(/^([a-z]+)(\d)?$/);
+      if (!match) return syllable;
+      const word = match[1]; const tone = match[2];
+      if (!tone || tone === '0' || tone === '5') return word + '0';
+      return word + tone; 
+  };
+  return targetParts.every((t, i) => getToneBase(inputParts[i]) === getToneBase(t));
+};
+
+const formatFlashcardEsp = (rawEsp) => {
+  if (!rawEsp) return { definitions: [], note: null };
+  let text = rawEsp; let note = null;
+  const bracketRegex = /\[(.*?)\]/g;
+  const matches = [...text.matchAll(bracketRegex)];
+  if (matches.length > 0) {
+    note = matches.map(m => m[1].trim()).join(' | ');
+    text = text.replace(bracketRegex, '').trim();
+  }
+  const definitions = text.split('/').map(s => s.trim()).filter(s => s !== '');
+  return { definitions, note };
+};
+
+const getEspPrompt = (esp) => {
+    const { definitions, note } = formatFlashcardEsp(esp);
+    let prompt = definitions[0];
+    if (note) prompt += ` [${note}]`;
+    return prompt;
+};
+
+const playAudio = (text, rate = 0.85, showAlertFunc) => {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN'; utterance.rate = rate; 
+        window.speechSynthesis.speak(utterance);
+    } else if (showAlertFunc) { showAlertFunc("Audio no soportado."); }
+};
+
+const buildPinyinDisplayArray = (charStr, tildesStr, numStr) => {
+  const chars = charStr.split('');
+  const numSyllables = numStr.trim().split(' ');
+  const tildesArray = Array.from(tildesStr.normalize('NFC'));
+  let tildesIdx = 0;
+  const result = [];
+  const isLetter = (c) => /\p{L}/u.test(c);
+
+  for (let i = 0; i < chars.length; i++) {
+      const c = chars[i];
+      const isChinese = /[\u4e00-\u9fa5]/.test(c);
+      let prefix = ''; let syllable = '';
+      if (isChinese) {
+          const baseSyllable = numSyllables.shift() || '';
+          const baseLen = Array.from(baseSyllable.replace(/\d/g, '')).length;
+          while (tildesIdx < tildesArray.length && !isLetter(tildesArray[tildesIdx])) { prefix += tildesArray[tildesIdx]; tildesIdx++; }
+          let lettersConsumed = 0;
+          while (lettersConsumed < baseLen && tildesIdx < tildesArray.length) {
+              const charAt = tildesArray[tildesIdx];
+              syllable += charAt; tildesIdx++;
+              if (isLetter(charAt)) lettersConsumed++;
+          }
+      }
+      result.push({ charIdx: i, prefix, syllable, isChinese });
+  }
+  let suffix = '';
+  while (tildesIdx < tildesArray.length) { suffix += tildesArray[tildesIdx]; tildesIdx++; }
+  if (suffix && result.length > 0) result[result.length - 1].suffix = suffix;
+  return result;
+};
+
+const getDynamicFontSize = (text) => {
+    if (!text) return 'text-5xl';
+    const len = text.length;
+    if (len > 25) return 'text-xl md:text-2xl';
+    if (len > 15) return 'text-2xl md:text-3xl';
+    if (len > 8) return 'text-3xl md:text-4xl';
+    if (len > 4) return 'text-4xl md:text-5xl';
+    return 'text-5xl md:text-6xl';
+};
+
+const backgroundGridUrl = `url("data:image/svg+xml,%3Csvg width='250' height='250' xmlns='http://www.w3.org/2000/svg'%3E%3Cline x1='0' y1='0' x2='250' y2='250' stroke='%23ffb3b3' stroke-width='2' stroke-dasharray='5,5' /%3E%3Cline x1='250' y1='0' x2='0' y2='250' stroke='%23ffb3b3' stroke-width='2' stroke-dasharray='5,5' /%3E%3Cline x1='125' y1='0' x2='125' y2='250' stroke='%23ff6666' stroke-width='2' stroke-dasharray='5,5' /%3E%3Cline x1='0' y1='125' x2='250' y2='125' stroke='%23ff6666' stroke-width='2' stroke-dasharray='5,5' /%3E%3Crect x='0' y='0' width='250' height='250' fill='none' stroke='%23ff3333' stroke-width='6' /%3E%3C/svg%3E")`;
+
+// ============================================================================
+// PERSISTENCIA
+// ============================================================================
+const storageAdapter = {
+  async obtenerUsuarios() {
+    return new Promise((resolve) => {
+      const data = localStorage.getItem('cn_app_users');
+      if (!data) {
+        const defaultUsers = [{ id: 'user_default', name: 'Estudiante 1' }];
+        localStorage.setItem('cn_app_users', JSON.stringify(defaultUsers));
+        localStorage.setItem('cn_app_current_user', 'user_default');
+        resolve({ users: defaultUsers, current: 'user_default' });
+      } else {
+        const users = JSON.parse(data);
+        const current = localStorage.getItem('cn_app_current_user') || users[0].id;
+        resolve({ users, current });
+      }
+    });
+  },
+  async guardarUsuarios(users, currentId) {
+    localStorage.setItem('cn_app_users', JSON.stringify(users));
+    if (currentId) localStorage.setItem('cn_app_current_user', currentId);
+  },
+  async obtenerItems(userId) {
+    const data = localStorage.getItem(`cn_app_items_${userId}`);
+    return data ? JSON.parse(data) : {};
+  },
+  async guardarItem(userId, item) {
+    const data = JSON.parse(localStorage.getItem(`cn_app_items_${userId}`) || '{}');
+    data[item.id] = item;
+    localStorage.setItem(`cn_app_items_${userId}`, JSON.stringify(data));
+  },
+  async guardarSesion(userId, sesion) {
+    const data = JSON.parse(localStorage.getItem(`cn_app_sessions_${userId}`) || '[]');
+    data.push(sesion);
+    localStorage.setItem(`cn_app_sessions_${userId}`, JSON.stringify(data));
+  },
+  async obtenerUltimaSesion(userId) {
+    const data = JSON.parse(localStorage.getItem(`cn_app_sessions_${userId}`) || '[]');
+    return data.length > 0 ? data[data.length - 1] : null;
+  },
+  async borrarProgreso(userId) {
+    localStorage.removeItem(`cn_app_items_${userId}`);
+    localStorage.removeItem(`cn_app_sessions_${userId}`);
+  }
+};
+
+// ============================================================================
+// NEGOCIO
+// ============================================================================
+const REGIMEN = {
+  A: { valor: 1.0, modificadorDominio: 15 },
+  B: { valor: 0.7, modificadorDominio: 5 },
+  C: { valor: 0.4, modificadorDominio: -10 },
+  D: { valor: 0.0, modificadorDominio: -25 }
+};
+
+const progresoService = {
+  crearItemBase(id, tipo) {
+    return { id, tipo, dominio: 0.0, estabilidadTemporal: 1.0, proximoRepasoTs: Date.now(), historial: [] };
+  },
+  evaluarEstricto(esCorrecto, tiempoMs, usoFlashcard, longitudEsperada = 1) {
+    if (usoFlashcard) return { nota: REGIMEN.D, evento: "resolucion_asistida" };
+    if (!esCorrecto) return { nota: REGIMEN.D, evento: "fallo_directo" };
+    const tiempoLimite = 8000 + (longitudEsperada * 1000);
+    if (tiempoMs > tiempoLimite) return { nota: REGIMEN.B, evento: "acierto_lento" };
+    return { nota: REGIMEN.A, evento: "resolucion_autonoma" };
+  },
+  evaluarTolerante(usoSombra, usoPista, canceladoFlashcard) {
+    if (canceladoFlashcard) return { nota: REGIMEN.D, evento: "salto_tras_consulta" };
+    if (usoSombra) return { nota: REGIMEN.D, evento: "trazo_asistencia_maxima" };
+    if (usoPista) return { nota: REGIMEN.C, evento: "trazo_asistencia_moderada" };
+    return { nota: REGIMEN.A, evento: "trazo_limpio" };
+  },
+  calcularNuevoEstado(itemActual, evaluacion, tiempoMs) {
+    const ahora = Date.now();
+    let nuevoDominio = Math.max(0, Math.min(100, itemActual.dominio + (REGIMEN[evaluacion.nota.valor === 1.0 ? 'A' : evaluacion.nota.valor === 0.7 ? 'B' : evaluacion.nota.valor === 0.4 ? 'C' : 'D'].modificadorDominio * (1 / itemActual.estabilidadTemporal))));
+    let nuevaEstabilidad = evaluacion.nota.valor >= 0.7 ? itemActual.estabilidadTemporal + 0.2 : Math.max(1.0, itemActual.estabilidadTemporal - 0.5);
+    const horasParaRepaso = Math.pow(nuevaEstabilidad, 2) * 4;
+    return { ...itemActual, dominio: nuevoDominio, estabilidadTemporal: nuevaEstabilidad, proximoRepasoTs: ahora + (horasParaRepaso * 3600000), historial: [...itemActual.historial, { ts: ahora, resultado: evaluacion.nota.valor, tiempoMs, evento: evaluacion.evento }] };
+  }
+};
+
+// ============================================================================
+// SESSION MANAGER
+// ============================================================================
+class SessionManager {
+  constructor() {
+    this.colaOriginal = []; this.colaAdaptativa = []; this.sesionActual = null;
+    this.registroProgreso = {}; this.userId = null;
+  }
+  async inicializarSesion(itemsSeleccionados, tiposConfig, conteo, userId) {
+    this.userId = userId;
+    const itemsGuardados = await storageAdapter.obtenerItems(userId);
+    let pool = itemsSeleccionados.map(raw => {
+      const tipo = Object.keys(tiposConfig).find(k => tiposConfig[k]) || 'esp';
+      const globalId = `${raw.id}_${tipo}`;
+      const itemData = itemsGuardados[globalId] || progresoService.crearItemBase(globalId, tipo);
+      return { raw, itemData, tipo };
+    });
+    const ahora = Date.now();
+    pool.sort((a, b) => {
+      const aVencido = a.itemData.proximoRepasoTs < ahora;
+      const bVencido = b.itemData.proximoRepasoTs < ahora;
+      if (aVencido && !bVencido) return -1;
+      if (!aVencido && bVencido) return 1;
+      return a.itemData.dominio - b.itemData.dominio;
+    });
+    this.colaOriginal = pool.slice(0, conteo);
+    this.colaAdaptativa = [...this.colaOriginal];
+    this.sesionActual = { idSesion: `sess_${Date.now()}`, inicioTs: Date.now(), metricas: { autonomos: 0, asistencia: 0, saltados: 0, trazos: 0 }, itemsPracticados: [] };
+    this.colaOriginal.forEach(i => { this.registroProgreso[i.itemData.id] = i.itemData; });
+  }
+  obtenerSiguiente() { return this.colaAdaptativa.length > 0 ? this.colaAdaptativa[0] : null; }
+  async procesarRespuesta(evaluacion, tiempoMs) {
+    const current = this.colaAdaptativa.shift();
+    if (!current) return;
+    if (evaluacion.evento.includes('autonoma') || evaluacion.evento.includes('limpio')) this.sesionActual.metricas.autonomos++;
+    else if (evaluacion.evento.includes('salto')) this.sesionActual.metricas.saltados++;
+    else this.sesionActual.metricas.asistencia++;
+    if (!this.sesionActual.itemsPracticados.includes(current.itemData.id)) this.sesionActual.itemsPracticados.push(current.itemData.id);
+    const nuevoEstado = progresoService.calcularNuevoEstado(current.itemData, evaluacion, tiempoMs);
+    this.registroProgreso[current.itemData.id] = nuevoEstado;
+    await storageAdapter.guardarItem(this.userId, nuevoEstado);
+    if (evaluacion.nota.valor < 1.0) {
+      let urgencia = 0;
+      switch (evaluacion.evento) {
+        case "salto_tras_consulta": urgencia = 6; break;
+        case "resolucion_asistida": urgencia = 5; break;
+        case "fallo_directo": urgencia = 4; break;
+        case "trazo_asistencia_maxima": urgencia = 3; break;
+        case "trazo_asistencia_moderada": urgencia = 2; break;
+        case "acierto_lento": urgencia = 1; break;
+      }
+      current.urgenciaTemp = urgencia;
+      this.colaAdaptativa.push(current);
+      this.colaAdaptativa.sort((a, b) => (b.urgenciaTemp || 0) - (a.urgenciaTemp || 0));
+    }
+  }
+  async cerrarSesion() {
+    this.sesionActual.finTs = Date.now();
+    await storageAdapter.guardarSesion(this.userId, this.sesionActual);
+    return this.sesionActual;
+  }
+}
+
+// ============================================================================
+// COMPONENTE: FLASHCARDS
+// ============================================================================
+const FlashcardBack = ({ item }) => {
+  const { definitions, note } = formatFlashcardEsp(item.esp);
+  return (
+      <div className="absolute inset-0 bg-indigo-600 flex flex-col items-center justify-center p-8 text-white text-center animate-in zoom-in duration-300">
+          <h3 className="text-4xl font-black mb-1 drop-shadow-lg">{item.tildes}</h3>
+          <p className="text-xl opacity-70 uppercase font-mono mb-6 tracking-widest">{item.num}</p>
+          <div className="h-px w-24 bg-white/30 mb-6" />
+          <div className="flex flex-col items-center gap-4 w-full max-h-[250px] overflow-y-auto hide-scrollbar px-2">
+              {definitions.length === 1 ? (
+                  <p className="text-2xl font-bold italic leading-tight">"{definitions[0]}"</p>
+              ) : (
+                  <div className="text-xl font-bold italic leading-tight text-left space-y-2 w-full flex flex-col items-center">
+                      {definitions.map((def, i) => <p key={i} className="w-full text-center">{i + 1}. {def}</p>)}
+                  </div>
+              )}
+              {note && (
+                  <div className="mt-2 text-sm opacity-90 bg-black/10 px-4 py-2 rounded-xl border border-white/10">
+                      <span className="font-bold">Nota:</span> <span className="italic">{note}</span>
+                  </div>
+              )}
+          </div>
+      </div>
+  );
+};
+
+const AnimatedFlashcardFront = ({ text, hwLoaded }) => {
+  const containerRef = useRef(null);
+  const writersRef = useRef([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const loopRef = useRef(false);
+
+  useEffect(() => {
+      if (!hwLoaded || !window.HanziWriter || !containerRef.current) return;
+      containerRef.current.innerHTML = ''; writersRef.current = [];
+      setIsPlaying(false); loopRef.current = false;
+      const chars = text.split('');
+      const size = chars.length > 5 ? 40 : (chars.length > 3 ? 55 : (chars.length > 1 ? 80 : 120));
+      chars.forEach((char) => {
+          const wrapper = document.createElement('div'); wrapper.className = "inline-flex items-center justify-center mx-1";
+          if (/[\u4e00-\u9fa5]/.test(char)) {
+              wrapper.style.width = `${size}px`; wrapper.style.height = `${size}px`;
+              containerRef.current.appendChild(wrapper);
+              const writer = window.HanziWriter.create(wrapper, char, { width: size, height: size, showCharacter: false, padding: 2, strokeAnimationSpeed: 1.5, delayBetweenStrokes: 50, drawingColor: '#1e293b' });
+              writersRef.current.push(writer);
+          } else {
+              wrapper.innerText = char; wrapper.className = `inline-flex items-center justify-center mx-1 font-bold text-slate-800 ${size === 120 ? 'text-7xl' : (size === 80 ? 'text-6xl' : 'text-4xl')}`;
+              containerRef.current.appendChild(wrapper); writersRef.current.push(null); 
+          }
+      });
+      let isCancelled = false;
+      const playOnce = async () => {
+          const promises = writersRef.current.map(w => (w && typeof w.animateCharacter === 'function') ? w.animateCharacter() : Promise.resolve());
+          await Promise.all(promises);
+          if (!isCancelled && !loopRef.current) writersRef.current.forEach(w => { if (w && typeof w.showCharacter === 'function') w.showCharacter(); });
+      };
+      setTimeout(() => { if (!isCancelled) playOnce(); }, 300);
+      return () => { isCancelled = true; writersRef.current.forEach(w => { if (w && typeof w.cancelAnimation === 'function') w.cancelAnimation(); }); };
+  }, [text, hwLoaded]);
+
+  useEffect(() => {
+      let isCancelled = false;
+      const playLoop = async () => {
+          if (!loopRef.current || isCancelled) return;
+          writersRef.current.forEach(w => { if (w && typeof w.hideCharacter === 'function') w.hideCharacter(); });
+          const promises = writersRef.current.map(w => (w && typeof w.animateCharacter === 'function') ? w.animateCharacter() : Promise.resolve());
+          await Promise.all(promises);
+          if (loopRef.current && !isCancelled) setTimeout(() => { if (loopRef.current && !isCancelled) playLoop(); }, 800);
+      };
+      if (isPlaying) { loopRef.current = true; playLoop(); } 
+      else { loopRef.current = false; writersRef.current.forEach(w => { if (w) { if (typeof w.cancelAnimation === 'function') w.cancelAnimation(); if (typeof w.showCharacter === 'function') w.showCharacter(); } }); }
+      return () => { isCancelled = true; };
+  }, [isPlaying]);
+
+  return (
+      <div className="flex flex-col items-center justify-center h-full w-full relative">
+          <div ref={containerRef} className="flex flex-wrap justify-center items-center w-full min-h-[150px]"></div>
+          <button onClick={(e) => { e.stopPropagation(); setIsPlaying(!isPlaying); }} className="absolute -bottom-2 right-0 p-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full transition-colors shadow-md z-10 active:scale-95" title="Reproducir orden de trazos">
+              {isPlaying ? <Square size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+          </button>
+      </div>
+  );
+};
+
+const FlashcardDisplay = ({ item, isTutor, onTutorNext, hwLoaded, showAlert }) => {
+    const [showReverso, setShowReverso] = useState(false);
+    
+    useEffect(() => {
+      setShowReverso(false);
+      playAudio(item.char, 0.85, showAlert);
+    }, [item]);
+  
+    const handleSpeak = (e) => { e.stopPropagation(); playAudio(item.char, 0.85, showAlert); };
+  
+    return (
+       <div className="w-full flex flex-col items-center justify-center">
+          <div onClick={() => setShowReverso(!showReverso)} className="bg-white h-[450px] w-full max-w-[350px] rounded-[40px] shadow-2xl border-4 border-white flex items-center justify-center p-8 cursor-pointer relative overflow-hidden group transition-all active:scale-[0.98]">
+              <button onClick={handleSpeak} className="absolute top-4 right-4 p-3 bg-slate-100 hover:bg-indigo-100 hover:text-indigo-600 text-slate-400 rounded-full transition-colors shadow-sm z-20 active:scale-95"><Volume2 size={22} fill="currentColor" /></button>
+              <div className={`text-center transition-all duration-500 w-full h-full flex flex-col justify-center items-center ${showReverso ? 'scale-75 opacity-10 blur-md' : 'scale-100'}`}>
+                  <AnimatedFlashcardFront text={item.char} hwLoaded={hwLoaded} />
+                  <p className="text-indigo-400 font-bold absolute bottom-2 left-0 right-0 mx-auto text-center uppercase tracking-[0.3em] text-[10px] animate-pulse">Toca para voltear</p>
+              </div>
+              {showReverso && <FlashcardBack item={item} />}
+          </div>
+          {isTutor && (
+              <button onClick={onTutorNext} className="mt-8 py-4 px-12 rounded-3xl bg-indigo-600 text-white font-black flex items-center justify-center gap-3 shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all w-full max-w-[350px]">
+                  <span className="uppercase tracking-widest text-sm">Entendido</span><CheckCircle size={24} />
+              </button>
+          )}
+       </div>
+    );
+  };
+
+// ============================================================================
+// CONVERSATION SUBCOMPONENTS
+// ============================================================================
+const BlindStrokeGame = ({ targetChar, onComplete, hwLoaded }) => {
+    const [idx, setIdx] = useState(0);
+    const containerRef = useRef(null);
+    const advance = () => { if (idx + 1 >= targetChar.length) { onComplete(); } else { setIdx(idx + 1); } };
+    useEffect(() => {
+        if (!hwLoaded || !targetChar || !containerRef.current) return;
+        const char = targetChar[idx];
+        if (!char) return;
+        containerRef.current.innerHTML = '';
+        if (!/[\u4e00-\u9fa5]/.test(char)) { advance(); return; }
+        try {
+            const writer = window.HanziWriter.create(containerRef.current, char, { width: 200, height: 200, showCharacter: false, showOutline: false, padding: 15, strokeAnimationSpeed: 1.5, delayBetweenStrokes: 150, highlightColor: '#3b82f6', drawingColor: '#1f2937' });
+            if (writer && typeof writer.quiz === 'function') { writer.quiz({ onComplete: () => { setTimeout(() => advance(), 400); } }); }
+        } catch (e) { advance(); }
+    }, [idx, targetChar, hwLoaded]);
+    return (
+        <div className="w-full flex flex-col items-center">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Dibuja la frase (A ciegas)</p>
+            <div ref={containerRef} style={{ width: '200px', height: '200px', backgroundImage: backgroundGridUrl, backgroundSize: 'cover', backgroundColor: '#fffaf0', touchAction: 'none' }} className="rounded-2xl shadow-inner overflow-hidden border border-slate-200"></div>
+        </div>
+    );
+};
+
+const DashboardProgreso = ({ onVolver, users, currentUser, setUsers, setCurrentUser, showAlert, showPrompt, showConfirm }) => {
+    const [metricas, setMetricas] = useState(null);
+    const [ultimaSesion, setUltimaSesion] = useState(null);
+    const [showUserMenu, setShowUserMenu] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
+    const currentUserData = users.find(u => u.id === currentUser) || users[0];
+  
+    useEffect(() => {
+      if (!currentUser) return;
+      const cargarDatos = async () => {
+        const items = await storageAdapter.obtenerItems(currentUser);
+        const sesion = await storageAdapter.obtenerUltimaSesion(currentUser);
+        let cats = { nuevo: 0, aprendizaje: 0, consolidacion: 0, consolidado: 0, fragil: 0, total: 0 };
+        const ahora = Date.now();
+        const TOTAL_TEORICO = QUIZ_POOL_DATA.length * 4; 
+        cats.nuevo = TOTAL_TEORICO;
+        
+        Object.values(items).forEach(item => {
+          cats.nuevo--; cats.total++;
+          if (item.dominio < 40) cats.aprendizaje++;
+          else if (item.dominio >= 40 && item.dominio < 80) cats.consolidacion++;
+          else if (item.dominio >= 80) {
+            if (item.estabilidadTemporal > 2.0 && ahora < item.proximoRepasoTs) cats.consolidado++;
+            else cats.fragil++;
+          }
+        });
+        setMetricas(cats); setUltimaSesion(sesion);
+      };
+      cargarDatos();
+    }, [currentUser, refreshTrigger]);
+  
+    const handleCrearUsuario = () => {
+      if (users.length >= 3) return showAlert("Máximo 3 usuarios permitidos.");
+      showPrompt("Nombre del nuevo estudiante:", "", async (nombre) => {
+        if (!nombre || !nombre.trim()) return;
+        const nuevoId = `user_${Date.now()}`;
+        const nuevosUsuarios = [...users, { id: nuevoId, name: nombre.trim() }];
+        await storageAdapter.guardarUsuarios(nuevosUsuarios, nuevoId);
+        setUsers(nuevosUsuarios); setCurrentUser(nuevoId); setShowUserMenu(false);
+      });
+    };
+  
+    const handleCambiarNombre = () => {
+      showPrompt("Nuevo nombre para tu perfil:", currentUserData.name, async (nuevoNombre) => {
+        if (!nuevoNombre || !nuevoNombre.trim()) return;
+        const nuevosUsuarios = users.map(u => u.id === currentUser ? { ...u, name: nuevoNombre.trim() } : u);
+        await storageAdapter.guardarUsuarios(nuevosUsuarios, currentUser);
+        setUsers(nuevosUsuarios); setShowUserMenu(false);
+      });
+    };
+  
+    const handleResetProgreso = () => {
+      showConfirm(`¿Estás seguro de que quieres BORRAR todo el progreso de ${currentUserData.name}? Esta acción es irreversible.`, async () => {
+        await storageAdapter.borrarProgreso(currentUser);
+        setRefreshTrigger(prev => prev + 1); setShowUserMenu(false); showAlert("Progreso reseteado con éxito.");
+      });
+    };
+  
+    const handleSwitchUser = async (id) => {
+      await storageAdapter.guardarUsuarios(users, id);
+      setCurrentUser(id); setShowUserMenu(false);
+    };
+  
+    if (!metricas) return <div className="p-10 text-center">Cargando progreso...</div>;
+    const totalEvaluado = metricas.total > 0 ? metricas.total : 1; 
+    const pctAprendizaje = (metricas.aprendizaje / totalEvaluado) * 100;
+    const pctConsolidacion = (metricas.consolidacion / totalEvaluado) * 100;
+    const pctFragil = (metricas.fragil / totalEvaluado) * 100;
+  
+    return (
+      <div className="bg-white rounded-[40px] shadow-2xl p-6 md:p-8 flex flex-col gap-6 animate-in slide-in-from-bottom duration-500 w-full max-w-md relative overflow-visible">
+        <div className="flex items-center justify-between mb-2 relative z-50">
+          <button onClick={onVolver} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"><Home size={28} /></button>
+          <div className="relative">
+            <button onClick={() => setShowUserMenu(!showUserMenu)} className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-full transition-colors active:scale-95">
+              <Users size={16} className="text-indigo-600" />
+              <span className="text-sm font-black text-slate-700 max-w-[120px] truncate">{currentUserData?.name}</span>
+              <ChevronDown size={14} className="text-slate-400" />
+            </button>
+            {showUserMenu && (
+              <div className="absolute top-full mt-2 right-0 w-64 bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 origin-top-right">
+                <div className="bg-indigo-50 px-4 py-3 border-b border-indigo-100"><span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Cambiar Perfil</span></div>
+                <div className="max-h-40 overflow-y-auto">
+                  {users.map(u => (
+                    <button key={u.id} onClick={() => handleSwitchUser(u.id)} className={`w-full text-left px-4 py-3 text-sm font-bold flex items-center justify-between transition-colors ${u.id === currentUser ? 'bg-indigo-600 text-white' : 'hover:bg-slate-50 text-slate-700'}`}>
+                      <span className="truncate">{u.name}</span>{u.id === currentUser && <CheckCircle size={14} opacity={0.5} />}
+                    </button>
+                  ))}
+                </div>
+                <div className="border-t border-slate-100 p-2 space-y-1 bg-slate-50">
+                  {users.length < 3 && (<button onClick={handleCrearUsuario} className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-100 rounded-xl transition-colors"><UserPlus size={14} /> Añadir Usuario</button>)}
+                  <button onClick={handleCambiarNombre} className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors"><Edit2 size={14} /> Renombrar Actual</button>
+                  <button onClick={handleResetProgreso} className="w-full flex items-center gap-3 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-100 rounded-xl transition-colors"><Trash2 size={14} /> Borrar Progreso</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+  
+        <div className="flex flex-col items-center justify-center py-4">
+          <div className="relative w-40 h-40 rounded-full flex items-center justify-center shadow-inner" style={{ background: `conic-gradient(#ef4444 ${pctFragil}%, #3b82f6 ${pctFragil} ${pctFragil + pctAprendizaje}%, #eab308 ${pctFragil + pctAprendizaje} ${pctFragil + pctAprendizaje + pctConsolidacion}%, #10b981 ${pctFragil + pctAprendizaje + pctConsolidacion} 100%)` }}>
+            <div className="w-32 h-32 bg-white rounded-full flex flex-col items-center justify-center shadow-md">
+              <span className="text-3xl font-black text-slate-800">{metricas.total}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Iniciados</span>
+            </div>
+          </div>
+        </div>
+  
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-emerald-50 p-4 rounded-3xl border border-emerald-100 flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-emerald-600 mb-2"><CheckCircle size={18}/><span className="text-[10px] font-bold uppercase tracking-wider">Consolidado</span></div>
+            <span className="text-3xl font-black text-emerald-700">{metricas.consolidado}</span>
+          </div>
+          <div className="bg-blue-50 p-4 rounded-3xl border border-blue-100 flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-blue-600 mb-2"><BrainCircuit size={18}/><span className="text-[10px] font-bold uppercase tracking-wider">Aprendizaje</span></div>
+            <span className="text-3xl font-black text-blue-700">{metricas.aprendizaje}</span>
+          </div>
+          <div className="bg-amber-50 p-4 rounded-3xl border border-amber-100 flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-amber-600 mb-2"><TrendingUp size={18}/><span className="text-[10px] font-bold uppercase tracking-wider">En Proceso</span></div>
+            <span className="text-3xl font-black text-amber-700">{metricas.consolidacion}</span>
+          </div>
+          <div className="bg-rose-50 p-4 rounded-3xl border border-rose-100 flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-rose-600 mb-2"><AlertTriangle size={18}/><span className="text-[10px] font-bold uppercase tracking-wider">Frágiles</span></div>
+            <span className="text-3xl font-black text-rose-700">{metricas.fragil}</span>
+          </div>
+        </div>
+  
+        {ultimaSesion && (
+          <div className="mt-4 p-5 bg-slate-50 rounded-3xl border border-slate-100">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2"><History size={16}/> Última Sesión</h3>
+            <div className="flex h-4 w-full rounded-full overflow-hidden shadow-inner bg-slate-200">
+              <div className="bg-emerald-500 h-full" style={{ width: `${(ultimaSesion.metricas.autonomos / (ultimaSesion.metricas.autonomos + ultimaSesion.metricas.asistencia + ultimaSesion.metricas.saltados || 1)) * 100}%` }}></div>
+              <div className="bg-amber-400 h-full" style={{ width: `${(ultimaSesion.metricas.asistencia / (ultimaSesion.metricas.autonomos + ultimaSesion.metricas.asistencia + ultimaSesion.metricas.saltados || 1)) * 100}%` }}></div>
+              <div className="bg-rose-400 h-full" style={{ width: `${(ultimaSesion.metricas.saltados / (ultimaSesion.metricas.autonomos + ultimaSesion.metricas.asistencia + ultimaSesion.metricas.saltados || 1)) * 100}%` }}></div>
+            </div>
+            <div className="flex justify-between mt-3 text-[10px] font-bold uppercase tracking-wider">
+              <span className="text-emerald-600">{ultimaSesion.metricas.autonomos} Autónomos</span>
+              <span className="text-amber-600">{ultimaSesion.metricas.asistencia} Asistidos</span>
+              <span className="text-rose-600">{ultimaSesion.metricas.saltados} Saltados</span>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+const ConversationPlay = ({ convItems, onFinish, currentUser, hwLoaded, showAlert }) => {
+    const [rounds, setRounds] = useState([]);
+    const [currentRoundIdx, setCurrentRoundIdx] = useState(0);
+    const [chatHistory, setChatHistory] = useState([]);
+    const [targetItem, setTargetItem] = useState(null);
+    const [minigameMode, setMinigameMode] = useState('');
+    const [roundSolved, setRoundSolved] = useState(false);
+    const [constructorChars, setConstructorChars] = useState([]);
+    const [selectedConstructorChars, setSelectedConstructorChars] = useState([]);
+    const [inputValue, setInputValue] = useState('');
+    const [showFlashcard, setShowFlashcard] = useState(false);
+    const [haConsultadoFlashcard, setHaConsultadoFlashcard] = useState(false);
+    const [feedback, setFeedback] = useState(null);
+    const [startTime, setStartTime] = useState(Date.now());
+
+    useEffect(() => {
+        let rs = []; let i = 0;
+        while(i < convItems.length) {
+            const chunkSize = Math.floor(Math.random() * 3) + 2; 
+            const chunk = convItems.slice(i, i + chunkSize);
+            const tIdx = Math.floor(Math.random() * chunk.length);
+            rs.push({ items: chunk, target: chunk[tIdx] });
+            i += chunkSize;
+        }
+        setRounds(rs); iniciarRonda(rs[0], []);
+    }, [convItems]);
+
+    const iniciarRonda = (ronda, history) => {
+        setChatHistory(history); setTargetItem(ronda.target); setRoundSolved(false);
+        setShowFlashcard(false); setHaConsultadoFlashcard(false); setFeedback(null);
+        setInputValue(''); setSelectedConstructorChars([]); setStartTime(Date.now());
+        const modes = ['A', 'B', 'C', 'D']; setMinigameMode(modes[Math.floor(Math.random() * modes.length)]);
+        if (minigameMode === 'A') {
+            const correctArr = ronda.target.char.split('');
+            const allChars = QUIZ_POOL_DATA.map(i => cleanPunctuation(i.char)).join('').split('');
+            const distractors = [];
+            for(let j=0; j<5; j++) distractors.push(allChars[Math.floor(Math.random() * allChars.length)] || '的');
+            setConstructorChars([...correctArr, ...distractors].sort(() => 0.5 - Math.random()));
+        }
+    };
+
+    const procesarResultado = async (isCorrect, flashcardUsed) => {
+        const tiempoMs = Date.now() - startTime;
+        let tipoProgreso = minigameMode === 'A' ? 'char' : (minigameMode === 'B' ? 'pinyin' : (minigameMode === 'C' ? 'esp' : 'stroke'));
+        const globalId = `${targetItem.id}_${tipoProgreso}`;
+        const itemsGuardados = await storageAdapter.obtenerItems(currentUser);
+        const itemActual = itemsGuardados[globalId] || progresoService.crearItemBase(globalId, tipoProgreso);
+        const evaluacion = progresoService.evaluarEstricto(isCorrect, tiempoMs, flashcardUsed, targetItem.char.length);
+        await storageAdapter.guardarItem(currentUser, progresoService.calcularNuevoEstado(itemActual, evaluacion, tiempoMs));
+        if (isCorrect || flashcardUsed) {
+            setRoundSolved(true);
+            setFeedback({ ok: isCorrect, msg: flashcardUsed ? `Frase revelada` : (evaluacion.nota.valor >= 0.7 ? "¡Excelente!" : "¡Bien! (Lento)") });
+            setTimeout(() => { if (currentRoundIdx + 1 < rounds.length) { setCurrentRoundIdx(prev => prev + 1); iniciarRonda(rounds[currentRoundIdx + 1], [...chatHistory, ...rounds[currentRoundIdx].items]); } else onFinish(); }, 2000);
+        } else { setFeedback({ ok: false, msg: "Reintenta..." }); setTimeout(() => setFeedback(null), 1200); }
+    };
+
+    const handleMinigameA = (char) => {
+        const newVal = [...selectedConstructorChars, char];
+        setSelectedConstructorChars(newVal);
+        if (newVal.join('') === targetItem.char) procesarResultado(true, false);
+        else if (newVal.length >= targetItem.char.length) {
+            procesarResultado(false, false);
+            setTimeout(() => setSelectedConstructorChars([]), 1000);
+        }
+    };
+
+    const handleMinigameBC = () => {
+        let isCorrect = false;
+        if (minigameMode === 'B') isCorrect = comparePinyin(inputValue, targetItem.num);
+        else if (minigameMode === 'C') isCorrect = checkEspAnswer(inputValue, targetItem.esp);
+        procesarResultado(isCorrect, false);
+    };
+
+    if (rounds.length === 0 || !targetItem) return <div>Cargando...</div>;
+    const currentRound = rounds[currentRoundIdx];
+    const displayedBubbles = [...chatHistory, ...currentRound.items];
+    let primerAutor = null;
+
+    return (
+        <div className="w-full flex flex-col items-center max-w-md h-[90vh] bg-white rounded-[40px] shadow-2xl overflow-hidden border border-slate-100">
+            <div className="w-full bg-indigo-600 p-4 text-white flex items-center justify-between shadow-md z-20">
+                <button onClick={onFinish} className="p-2 hover:bg-indigo-500 rounded-full transition-colors"><X size={20}/></button>
+                <div className="text-center"><h3 className="font-black text-sm uppercase">{targetItem.tema}</h3><p className="text-[10px] opacity-70">Ronda {currentRoundIdx + 1} / {rounds.length}</p></div>
+                <div className="w-10"></div>
+            </div>
+            <div className="w-full flex-grow bg-slate-50 p-4 overflow-y-auto flex flex-col gap-4 hide-scrollbar">
+                {displayedBubbles.map((item, idx) => {
+                    const match = item.subtema.match(/(.+) (\d+)/);
+                    const author = match ? match[1] : item.subtema;
+                    if (!primerAutor) primerAutor = author;
+                    const isRight = author === primerAutor;
+                    const isHidden = item.id === targetItem.id && !roundSolved;
+                    return (
+                        <div key={idx} className={`flex flex-col w-full animate-in slide-in-from-bottom-2 ${isRight ? 'items-end' : 'items-start'}`}>
+                            <span className="text-[10px] font-bold text-slate-400 mb-1 px-2">{author}</span>
+                            <div className={`p-4 rounded-3xl max-w-[85%] shadow-sm relative ${isRight ? 'bg-indigo-600 text-white rounded-tr-sm' : 'bg-white text-slate-800 border border-slate-100 rounded-tl-sm'} ${isHidden ? 'border-2 border-dashed border-indigo-300 bg-indigo-50 !text-transparent' : ''}`}>
+                                {isHidden ? <div className="flex gap-1 py-2 px-4"><div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce"></div><div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{animationDelay: '0.2s'}}></div><div className="w-2 h-2 rounded-full bg-indigo-400 animate-bounce" style={{animationDelay: '0.4s'}}></div></div> 
+                                : <div><p className="text-xl font-black">{item.char}</p><p className={`text-xs mt-1 font-medium ${isRight ? 'text-indigo-200' : 'text-slate-500'}`}>{item.esp}</p></div>}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            <div className="w-full bg-white p-6 shadow-2xl rounded-t-[32px] z-20 flex flex-col items-center">
+                {showFlashcard ? (
+                    <div className="w-full flex flex-col items-center animate-in zoom-in">
+                        <FlashcardDisplay item={targetItem} isTutor={true} onTutorNext={() => { setShowFlashcard(false); setHaConsultadoFlashcard(true); }} hwLoaded={hwLoaded} showAlert={showAlert}/>
+                    </div>
+                ) : (
+                    <>
+                        <div className="w-full flex justify-between items-center mb-4">
+                            <span className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1"><Zap size={14}/> Completa la burbuja</span>
+                            <button onClick={() => setShowFlashcard(true)} className="text-[10px] font-bold bg-rose-50 text-rose-600 px-3 py-1 rounded-full flex items-center gap-1 hover:bg-rose-100"><HelpCircle size={12}/> Ayuda</button>
+                        </div>
+                        {feedback && <div className={`w-full py-2 px-4 mb-4 rounded-xl text-center font-bold text-sm ${feedback.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>{feedback.msg}</div>}
+                        {minigameMode === 'A' && (
+                            <div className="w-full">
+                                <div className="min-h-[44px] w-full bg-slate-50 rounded-xl mb-4 flex items-center justify-center text-2xl font-black border border-slate-200">{selectedConstructorChars.join('')}</div>
+                                <div className="flex flex-wrap justify-center gap-2">{constructorChars.map((c, i) => (<button key={i} onClick={() => handleMinigameA(c)} className="w-12 h-12 bg-white border-2 border-slate-100 rounded-xl text-2xl font-bold text-slate-700 shadow-sm hover:border-indigo-400 active:scale-95">{c}</button>))}</div>
+                            </div>
+                        )}
+                        {(minigameMode === 'B' || minigameMode === 'C') && (
+                            <div className="w-full flex flex-col gap-3">
+                                <input autoFocus type="text" className="w-full p-4 text-center text-lg font-bold border-2 border-slate-100 rounded-2xl outline-none focus:border-indigo-400" placeholder={minigameMode === 'B' ? 'ej. ni3 hao3' : 'ej. hola'} value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleMinigameBC()}/>
+                                <div className="flex gap-2">
+                                    <button onClick={handleMinigameBC} className="flex-grow bg-indigo-600 text-white font-bold py-4 rounded-2xl active:scale-95">ENVIAR</button>
+                                    {haConsultadoFlashcard && <button onClick={() => procesarResultado(false, true)} className="px-4 bg-slate-100 text-slate-400 font-bold rounded-2xl active:scale-95"><SkipForward size={20}/></button>}
+                                </div>
+                            </div>
+                        )}
+                        {minigameMode === 'D' && (
+                            <div className="w-full flex flex-col items-center">
+                                <BlindStrokeGame targetChar={targetItem.char} onComplete={() => procesarResultado(true, false)} hwLoaded={hwLoaded} />
+                                {haConsultadoFlashcard && <button onClick={() => procesarResultado(false, true)} className="mt-4 w-full py-2 bg-slate-100 text-slate-400 font-bold rounded-xl active:scale-95 flex items-center justify-center gap-2"><SkipForward size={16}/> SALTAR</button>}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+};
+
+// ============================================================================
+// COMPONENTE PRINCIPAL
+// ============================================================================
+const App = () => {
+  const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [view, setView] = useState('LOADING'); 
+  const [currentIdx, setCurrentIdx] = useState(0); 
+
+  const initialLessonsState = UNIQUE_LESSONS.reduce((acc, l) => ({...acc, [l]: true}), {});
+  const [config, setConfig] = useState({ count: 20, types: { char: true, pinyin: true, esp: true, stroke: true, dictado: true }, lessons: initialLessonsState });
+  const sessionManagerRef = useRef(new SessionManager());
+  const [currentStep, setCurrentStep] = useState(0);
+  const [quizState, setQuizState] = useState(null); 
+  const [feedback, setFeedback] = useState(null); 
+  const [inputValue, setInputValue] = useState('');
+  const [showFlashSearch, setShowFlashSearch] = useState(false);
+  const [flashSearchValue, setFlashSearchValue] = useState('');
+  const [tutorMode, setTutorMode] = useState(false);
+  const seenInSessionRef = useRef(new Set());
+  const [haConsultadoFlashcard, setHaConsultadoFlashcard] = useState(false);
+  const startTimeRef = useRef(Date.now());
+  const [strokeCharIdx, setStrokeCharIdx] = useState(0);
+  const [showOutline, setShowOutline] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [usoSombraEnTrazo, setUsoSombraEnTrazo] = useState(false);
+  const [usoPistaEnTrazo, setUsoPistaEnTrazo] = useState(false);
+  const [hwLoaded, setHwLoaded] = useState(false);
+  const writerRef = useRef(null);
+  const successTimeoutRef = useRef(null);
+  const [modal, setModal] = useState({ isOpen: false, type: '', text: '', defaultValue: '', onConfirm: null, onCancel: null });
+  const [convList, setConvList] = useState([]);
+
+  const showAlert = (text) => setModal({ isOpen: true, type: 'alert', text, onConfirm: () => setModal(m => ({...m, isOpen: false})) });
+  const showPrompt = (text, defaultValue, onConfirm) => setModal({ isOpen: true, type: 'prompt', text, defaultValue, onConfirm: (val) => { onConfirm(val); setModal(m => ({...m, isOpen: false})); }, onCancel: () => setModal(m => ({...m, isOpen: false})) });
+  const showConfirm = (text, onConfirm) => setModal({ isOpen: true, type: 'confirm', text, onConfirm: () => { onConfirm(); setModal(m => ({...m, isOpen: false})); }, onCancel: () => setModal(m => ({...m, isOpen: false})) });
+
+  useEffect(() => {
+    const init = async () => { const data = await storageAdapter.obtenerUsuarios(); setUsers(data.users); setCurrentUser(data.current); setView('START'); };
+    init();
+    if (!document.getElementById('hanzi-writer-script')) {
+      const script = document.createElement('script'); script.id = 'hanzi-writer-script'; script.src = 'https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js';
+      script.onload = () => setHwLoaded(true); document.head.appendChild(script);
+    } else setHwLoaded(true);
+  }, []);
+
+  const generateOptions = (correctItem, field) => {
+    const distractors = QUIZ_POOL_DATA.filter(l => l[field] !== correctItem[field]).sort(() => 0.5 - Math.random()).slice(0, 4).map(l => l[field]);
+    return [...distractors, correctItem[field]].sort(() => 0.5 - Math.random());
+  };
+
+  const prepareNextStepFromQueue = () => {
+    const nextItemObj = sessionManagerRef.current.obtenerSiguiente();
+    if (!nextItemObj) { setView('FIN'); return; }
+    let { raw: item, tipo: format } = nextItemObj;
+    setHaConsultadoFlashcard(false); startTimeRef.current = Date.now();
+    setUsoPistaEnTrazo(false); setUsoSombraEnTrazo(false);
+    if (!seenInSessionRef.current.has(item.id)) { setTutorMode(true); seenInSessionRef.current.add(item.id); } else setTutorMode(false);
+    let isDictation = false; if (format === 'dictado') { isDictation = true; format = ['char', 'stroke', 'pinyin', 'esp'][Math.floor(Math.random() * 4)]; }
+    
+    const isEsp = Math.random() > 0.5;
+    
+    let quizData = { format, item, idInterno: nextItemObj.itemData.id, isDictation };
+    setStrokeCharIdx(0); 
+    if (format === 'char') { quizData.question = isDictation ? "Busca el carácter" : item.char; quizData.correctVal = isEsp ? item.esp : item.num; quizData.options = generateOptions(item, isEsp ? 'esp' : 'num'); quizData.isInput = false; }
+    else if (format === 'pinyin') { quizData.question = isDictation ? "Escribe el pinyin" : (Math.random() > 0.5 ? item.char : getEspPrompt(item.esp)); quizData.correctVal = item.num; quizData.isInput = true; }
+    else if (format === 'stroke') { quizData.question = isDictation ? "Dibuja el audio" : "Dibuja: " + getEspPrompt(item.esp); quizData.correctVal = item.char; quizData.isInput = false; }
+    else { quizData.question = isDictation ? "Traducción" : (Math.random() > 0.5 ? item.tildes : item.char); quizData.correctVal = item.esp; quizData.isInput = Math.random() > 0.5; if (!quizData.isInput) quizData.options = generateOptions(item, 'esp'); }
+    setQuizState(quizData); setInputValue(''); setFeedback(null);
+  };
+
+  useEffect(() => { if (quizState?.isDictation && !feedback && !tutorMode) { const timer = setTimeout(() => playAudio(quizState.item.char, 0.85, showAlert), 300); return () => clearTimeout(timer); } }, [quizState, feedback, tutorMode]);
+
+  const handleAnswer = async (val) => {
+    if (feedback) return;
+    const tiempoMs = Date.now() - startTimeRef.current;
+    let isCorrect = false; let evaluacion;
+    if (quizState.format === 'stroke') {
+        if (val === 'SALTAR') evaluacion = progresoService.evaluarTolerante(false, false, true); 
+        else { evaluacion = progresoService.evaluarTolerante(usoSombraEnTrazo, usoPistaEnTrazo, haConsultadoFlashcard); isCorrect = true; }
+    } else {
+        const longitudEsperada = quizState.correctVal?.length || 1;
+        if (val === 'SALTAR') evaluacion = progresoService.evaluarEstricto(false, tiempoMs, true, longitudEsperada); 
+        else {
+            isCorrect = quizState.isInput ? (quizState.format === 'pinyin' ? comparePinyin(val, quizState.correctVal) : checkEspAnswer(val, quizState.correctVal)) : val === quizState.correctVal;
+            evaluacion = progresoService.evaluarEstricto(isCorrect, tiempoMs, haConsultadoFlashcard, longitudEsperada);
+        }
+    }
+    await sessionManagerRef.current.procesarRespuesta(evaluacion, tiempoMs);
+    let cleanTarget = (quizState.format === 'pinyin' || quizState.format === 'stroke') ? quizState.correctVal : parseEspAnswers(quizState.correctVal)[0];
+    if (val === 'SALTAR') setFeedback({ isCorrect: false, msg: `Era: ${cleanTarget}`, showDetail: true });
+    else if (isCorrect) {
+      let msg = "¡Excelente!"; if (evaluacion.nota.valor === 0.7) msg = "¡Correcto! (Lento)"; else if (evaluacion.nota.valor <= 0.4) msg = "Bien (con ayuda)";
+      setFeedback({ isCorrect: true, msg, showDetail: true });
+    } else setFeedback({ isCorrect: false, msg: `Incorrecto. Era: ${cleanTarget}`, showDetail: true });
+    setTimeout(() => { setCurrentStep(prev => prev + 1); prepareNextStepFromQueue(); }, 1800); 
+  };
+
+  const loadHanziWriter = () => {
+    if (!hwLoaded || view !== 'QUIZ' || !quizState || quizState.format !== 'stroke' || tutorMode) return;
+    const target = document.getElementById('character-target'); if (!target) return;
+    target.innerHTML = ''; const phrase = quizState.item; if (!phrase || !phrase.char[strokeCharIdx]) return;
+    const char = phrase.char[strokeCharIdx]; if (!/[\u4e00-\u9fa5]/.test(char)) { setStrokeCharIdx(prev => prev + 1); return; }
+    try {
+        writerRef.current = window.HanziWriter.create('character-target', char, { width: 220, height: 220, showCharacter: false, showOutline: showOutline, padding: 15, strokeAnimationSpeed: 1.5, delayBetweenStrokes: 150, highlightColor: '#3b82f6', drawingColor: '#1f2937' });
+        if (writerRef.current && typeof writerRef.current.quiz === 'function') writerRef.current.quiz({ onComplete: () => { setShowSuccess(true); successTimeoutRef.current = setTimeout(() => { setShowSuccess(false); if (strokeCharIdx < phrase.char.length - 1) setStrokeCharIdx(prev => prev + 1); else handleAnswer(phrase.char); }, 800); } });
+    } catch (e) { setStrokeCharIdx(prev => prev + 1); }
+  };
+  useEffect(() => { loadHanziWriter(); return () => clearTimeout(successTimeoutRef.current); }, [hwLoaded, view, currentStep, strokeCharIdx, quizState, showOutline, tutorMode]);
+
+  const toggleOutline = () => {
+    setUsoSombraEnTrazo(true); const nextState = !showOutline; setShowOutline(nextState);
+    if (writerRef.current) { if (nextState && typeof writerRef.current.showOutline === 'function') writerRef.current.showOutline(); else if (!nextState && typeof writerRef.current.hideOutline === 'function') writerRef.current.hideOutline(); }
+  };
+
+  const strokeDisplayArray = useMemo(() => { if (quizState && quizState.format === 'stroke') return buildPinyinDisplayArray(quizState.item.char, quizState.item.tildes, quizState.item.num); return []; }, [quizState]);
+
+  return (
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans selection:bg-indigo-100">
+      <div className="max-w-md w-full relative flex justify-center">
+        {view === 'START' && (
+          <div className="bg-white rounded-[40px] shadow-2xl p-10 text-center flex flex-col items-center gap-6 border border-white w-full">
+            <div className="w-24 h-24 bg-indigo-600 rounded-[30px] flex items-center justify-center text-white shadow-xl rotate-3 animate-bounce-slow"><BookOpen size={48} /></div>
+            <div><h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">Quiz Chino</h1><p className="text-slate-500 mt-2">Sistema Maestro de Léxico</p></div>
+            <div className="flex flex-col gap-3 w-full mt-4">
+              <button onClick={() => setView('CONFIG')} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-[24px] shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 active:scale-95"><Play size={20} fill="white" /> Práctica Regular</button>
+              <button onClick={() => setView('CONV_LIST')} className="w-full bg-blue-500 text-white font-bold py-4 rounded-[24px] shadow-lg hover:bg-blue-600 transition-all flex items-center justify-center gap-3 active:scale-95"><MessageCircle size={20} fill="white" /> Modo Conversación</button>
+              <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => { setView('FLASH'); setCurrentIdx(0); }} className="w-full bg-white border-2 border-slate-200 text-slate-600 font-bold py-3 rounded-[24px] hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"><RefreshCw size={16} /> Flashcards</button>
+                  <button onClick={() => setView('MENU')} className="w-full bg-white border-2 border-slate-200 text-slate-600 font-bold py-3 rounded-[24px] hover:bg-slate-50 transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"><BarChart2 size={16} /> Progreso</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {view === 'CONV_LIST' && (
+          <div className="bg-white rounded-[40px] shadow-2xl p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-500 w-full max-w-md relative overflow-hidden h-[80vh]">
+             <div className="flex items-center justify-between mb-4"><button onClick={() => setView('START')} className="p-2 text-slate-400 hover:text-indigo-600"><Home size={28} /></button><h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2"><MessageCircle/> Conversaciones</h2><div className="w-10"></div></div>
+             <div className="flex-grow overflow-y-auto flex flex-col gap-3 hide-scrollbar px-2">{Object.keys(CONVERSATIONS_MAP).map(convId => (<button key={convId} onClick={() => { setConvList(CONVERSATIONS_MAP[convId]); setView('CONV_PLAY'); }} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-left hover:border-indigo-400 active:scale-95 group"><div className="flex justify-between items-center"><span className="font-bold text-slate-700 group-hover:text-indigo-700">Conversación {convId}</span><ChevronRight size={20} className="text-slate-300 group-hover:text-indigo-500" /></div><p className="text-xs text-slate-400 mt-1">{CONVERSATIONS_MAP[convId].length} diálogos</p></button>))}</div>
+          </div>
+        )}
+        {view === 'CONV_PLAY' && <ConversationPlay convItems={convList} onFinish={() => setView('START')} currentUser={currentUser} hwLoaded={hwLoaded} showAlert={showAlert} />}
+        {view === 'CONFIG' && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+              <div className="bg-indigo-600 p-6 text-white flex justify-between items-center font-bold"><h3>Configurar Sesión</h3><button onClick={() => setView('START')}><X size={20} /></button></div>
+              <div className="p-6 space-y-6">
+                <div><p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Ejercicios Iniciales</p><div className="flex gap-2">{[10, 20, 30].map(n => <button key={n} onClick={() => setConfig(c => ({...c, count: n}))} className={`flex-1 py-2 rounded-xl font-bold transition-all ${config.count === n ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-400'}`}>{n}</button>)}</div></div>
+                <div><p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Habilidades</p><div className="grid grid-cols-2 gap-2">{Object.entries({ char: 'Carácter', pinyin: 'Pinyin', esp: 'Español', stroke: 'Trazos', dictado: 'Dictado' }).map(([k, label]) => (<label key={k} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl cursor-pointer"><input type="checkbox" checked={config.types[k]} onChange={() => setConfig(c => ({...c, types: {...c.types, [k]: !c.types[k]}}))} className="w-5 h-5 accent-indigo-600 rounded" /><span>{label}</span></label>))}</div></div>
+                <div><p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Lecciones</p><div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto hide-scrollbar">{UNIQUE_LESSONS.map(l => (<button key={l} onClick={() => setConfig(c => ({...c, lessons: {...c.lessons, [l]: !c.lessons[l]}}))} className={`px-3 py-1 rounded-full text-[10px] font-bold border-2 transition-all ${config.lessons[l] ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-white text-slate-300'}`}>{l}</button>))}</div></div>
+                <button onClick={async () => { let pool = QUIZ_POOL_DATA.filter(l => config.lessons[l.section]); if (!pool.length) return showAlert("Elige lecciones."); await sessionManagerRef.current.inicializarSesion(pool, config.types, config.count, currentUser); seenInSessionRef.current = new Set(); prepareNextStepFromQueue(); setView('QUIZ'); }} className="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95">Empezar Misión</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {view === 'QUIZ' && quizState && (
+          <div className="flex flex-col gap-4 animate-in fade-in duration-500 w-full max-w-md">
+            <div className="flex justify-between items-center px-4"><button onClick={() => setView('START')} className="text-slate-400 hover:text-indigo-600"><Home size={24}/></button><div className="flex flex-col items-center"><div className="w-32 h-2 bg-slate-200 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 transition-all duration-500" style={{ width: `${(Math.min(currentStep, config.count) / config.count) * 100}%` }} /></div><span className="text-[10px] font-bold text-slate-400 mt-1">{sessionManagerRef.current.colaAdaptativa.length} restantes</span></div><button onClick={async () => { await sessionManagerRef.current.cerrarSesion(); setView('MENU'); }} className="text-xs font-bold text-red-400 uppercase">Fin</button></div>
+            {tutorMode ? <div className="animate-in zoom-in duration-500 mt-4 text-center"><h2 className="text-sm font-black text-indigo-500 mb-4 flex items-center gap-2 uppercase tracking-widest bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100 inline-block"><BookOpen size={18} /> Conoce la Frase</h2><FlashcardDisplay key={`tutor-${quizState.item.id}`} item={quizState.item} isTutor={true} onTutorNext={() => setTutorMode(false)} hwLoaded={hwLoaded} showAlert={showAlert} /></div>
+            : <div className="bg-white rounded-[40px] shadow-2xl p-6 min-h-[500px] flex flex-col justify-between border border-white relative overflow-hidden text-center">
+                  <div className="flex-grow flex flex-col items-center justify-center gap-6 mt-4 z-10 relative">
+                    <div className="w-full space-y-2 px-2 flex flex-col items-center">
+                        {quizState.isDictation ? <div className="bg-indigo-50 p-6 rounded-3xl w-full border-2 border-indigo-100"><div className="flex items-center justify-center gap-4"><button onClick={() => playAudio(quizState.item.char, 0.85, showAlert)} disabled={!!feedback} className="w-16 h-16 bg-indigo-600 text-white rounded-full shadow-lg active:scale-95"><Volume2 size={32} /></button><div className="flex flex-col gap-2"><button onClick={() => playAudio(quizState.item.char, 0.4, showAlert)} disabled={!!feedback} className="px-4 py-2 bg-white text-indigo-600 font-bold text-xs rounded-xl border border-indigo-100"><Volume1 size={14} /> Lento</button><button onClick={() => { if(!feedback){setHaConsultadoFlashcard(true); setTutorMode(true);} }} disabled={!!feedback} className="px-4 py-2 font-bold text-xs rounded-xl bg-rose-50 text-rose-600 border border-rose-100"><HelpCircle size={14} /> Flashcard</button></div></div><span className="text-sm font-bold text-slate-500 mt-4 block">{quizState.question}</span></div>
+                        : <h3 onClick={() => { if(!feedback){setHaConsultadoFlashcard(true); setTutorMode(true);} }} className={`font-black text-slate-800 break-words ${!feedback ? 'cursor-pointer hover:text-indigo-600' : ''} ${getDynamicFontSize(quizState.question)}`}>{quizState.question}</h3>}
+                        {feedback?.showDetail && (<div className="text-indigo-500 font-bold animate-in zoom-in mt-2"><p className="text-xl">{quizState.item.tildes}</p><p className="text-sm opacity-60">{quizState.item.num}</p>{quizState.isDictation && <p className="text-2xl font-black text-slate-800 mt-2">{quizState.item.char}</p>}</div>)}
+                    </div>
+                    {quizState.format === 'stroke' ? (<div className="w-full flex flex-col items-center"><div id="character-target" style={{ width: '220px', height: '220px', backgroundImage: backgroundGridUrl, backgroundSize: 'cover', backgroundColor: '#fffaf0' }} className="rounded-lg shadow-inner overflow-hidden relative">{showSuccess && <div className="absolute inset-0 bg-emerald-500 bg-opacity-90 rounded-lg text-white text-3xl font-bold flex items-center justify-center">¡Excelente!</div>}</div><div className="flex justify-center gap-4 mt-6"><button onClick={toggleOutline} className={`p-3 rounded-2xl shadow-sm ${showOutline ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-200 text-slate-500'}`}><Eye size={24} /></button><button onClick={() => { setUsoPistaEnTrazo(true); if(writerRef.current) writerRef.current.animateCharacter(); }} className="p-3 bg-blue-50 text-blue-600 rounded-2xl"><HelpCircle size={24} /></button></div></div>)
+                    : quizState.isInput ? (<div className="w-full space-y-3"><input autoFocus type="text" className="w-full p-5 text-center text-2xl border-2 border-slate-100 rounded-3xl outline-none focus:border-indigo-400" placeholder="..." value={inputValue} onChange={e => setInputValue(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAnswer(inputValue)} disabled={!!feedback}/><button onClick={() => handleAnswer(inputValue)} disabled={!!feedback} className="w-full bg-indigo-600 text-white font-bold py-5 rounded-3xl shadow-lg active:scale-95">COMPROBAR</button></div>)
+                    : (<div className="w-full grid grid-cols-1 gap-2">{quizState.options.map((opt, i) => (<button key={i} onClick={() => handleAnswer(opt)} disabled={!!feedback} className="p-4 text-left border-2 border-slate-100 rounded-2xl font-bold text-slate-600 hover:bg-indigo-50">{parseEspAnswers(opt)[0] || opt}</button>))}</div>)}
+                  </div>
+                  <div className="mt-8 h-[48px]">{(!feedback || haConsultadoFlashcard) && <button onClick={() => handleAnswer('SALTAR')} disabled={!!feedback} className="w-full bg-slate-100 text-slate-400 font-bold py-3 rounded-xl flex items-center justify-center gap-2"><SkipForward size={16} /> SALTAR</button>}</div>
+                  {feedback && <div className={`absolute bottom-0 left-0 w-full min-h-[104px] p-6 flex flex-col items-center justify-center text-white font-bold animate-in slide-in-from-bottom shadow-2xl ${feedback.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}><span className="text-xl">{feedback.msg}</span></div>}
+                </div>}
+          </div>
+        )}
+        {view === 'MENU' && <DashboardProgreso onVolver={() => setView('START')} users={users} currentUser={currentUser} setUsers={setUsers} setCurrentUser={setCurrentUser} showAlert={showAlert} showPrompt={showPrompt} showConfirm={showConfirm} />}
+        {view === 'FLASH' && FLASH_DATA[currentIdx] && (
+            <div className="flex flex-col gap-4 animate-in fade-in duration-500 w-full max-w-[350px]">
+                <div className="flex items-center justify-between mb-2"><button onClick={() => setView('START')} className="p-2 text-slate-400 hover:text-indigo-600"><Home size={28} /></button><span className="text-lg font-black text-slate-400 bg-slate-200 px-3 py-1 rounded-full">#{FLASH_DATA[currentIdx].id}</span><div className="relative min-w-[44px] flex justify-end">{showFlashSearch ? <input autoFocus type="number" className="w-20 px-3 py-1 rounded-full text-sm font-bold border-2 border-indigo-400" placeholder="N°..." value={flashSearchValue} onChange={e => setFlashSearchValue(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { const foundIndex = FLASH_DATA.findIndex(item => item.id === parseInt(flashSearchValue, 10)); if (foundIndex !== -1) setCurrentIdx(foundIndex); else showAlert("No encontrado."); setShowFlashSearch(false); setFlashSearchValue(''); } }} onBlur={() => setShowFlashSearch(false)} /> : <button onClick={() => setShowFlashSearch(true)} className="p-2 bg-slate-200 rounded-full"><Search size={20} /></button>}</div></div>
+                <div className="w-full text-center mb-2"><span className="inline-block bg-indigo-100 text-indigo-700 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider truncate max-w-full">{FLASH_DATA[currentIdx].section}</span></div>
+                <FlashcardDisplay key={`flash-${FLASH_DATA[currentIdx].id}`} item={FLASH_DATA[currentIdx]} isTutor={false} hwLoaded={hwLoaded} showAlert={showAlert} />
+                <div className="grid grid-cols-2 gap-4 mt-2"><button onClick={() => currentIdx > 0 && setCurrentIdx(currentIdx - 1)} disabled={currentIdx <= 0} className="py-5 rounded-3xl border-2 flex items-center justify-center gap-3 bg-white disabled:opacity-50"><ChevronLeft size={24} /> ATRÁS</button><button onClick={() => currentIdx < FLASH_DATA.length - 1 && setCurrentIdx(currentIdx + 1)} disabled={currentIdx >= FLASH_DATA.length - 1} className="py-5 rounded-3xl font-black bg-indigo-600 text-white active:scale-95 disabled:opacity-50">SIGUIENTE <ChevronRight size={24} className="inline"/></button></div>
+            </div>
+        )}
+        {view === 'FIN' && <DashboardProgreso onVolver={() => setView('START')} users={users} currentUser={currentUser} setUsers={setUsers} setCurrentUser={setCurrentUser} showAlert={showAlert} showPrompt={showPrompt} showConfirm={showConfirm} />}
+      </div>
+
+      {modal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => modal.type === 'alert' ? modal.onConfirm() : modal.onCancel()}></div>
+          <div className="bg-white rounded-3xl p-6 shadow-2xl w-full max-w-sm relative animate-in zoom-in-95 duration-200"><p className="text-slate-800 font-bold text-lg mb-4 text-center leading-snug">{modal.text}</p>{modal.type === 'prompt' && <input autoFocus type="text" className="w-full p-4 mb-4 bg-slate-50 text-slate-800 rounded-xl outline-none border-2 border-slate-200 focus:border-indigo-400 text-center" defaultValue={modal.defaultValue} id="custom-prompt-input" onKeyDown={e => e.key === 'Enter' && modal.onConfirm(e.target.value)} />}<div className="flex gap-3">{(modal.type === 'prompt' || modal.type === 'confirm') && <button onClick={modal.onCancel} className="flex-1 py-3 rounded-xl font-bold text-slate-500 bg-slate-100">Cancelar</button>}<button onClick={() => modal.type === 'prompt' ? modal.onConfirm(document.getElementById('custom-prompt-input').value) : modal.onConfirm()} className="flex-1 py-3 rounded-xl font-bold text-white bg-indigo-600">Aceptar</button></div></div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes bounce-slow { 0%, 100% { transform: translateY(-5%) rotate(3deg); } 50% { transform: translateY(0) rotate(3deg); } }
+        .animate-bounce-slow { animation: bounce-slow 4s ease-in-out infinite; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+    </div>
+  );
+};
+
+export default App;# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+
+      # Runs a single command using the runners shell
+      - name: Run a one-line script
+        run: echo Hello, world!
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
